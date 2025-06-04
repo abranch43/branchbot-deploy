@@ -5,6 +5,7 @@ import requests
 # Initialize OpenAI client (v1.0+ syntax)
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+
 # Notion credentials
 notion_token = os.getenv("NOTION_API_KEY")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
