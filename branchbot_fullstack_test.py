@@ -3,15 +3,23 @@ import openai
 import requests
 from dotenv import load_dotenv
 
-# ✅ Load .env variables
+# ✅ Load variables from .env file
 load_dotenv()
 
-# Get API credentials
+# ✅ Read keys from environment
 openai_api_key = os.getenv("OPENAI_API_KEY")
 notion_token = os.getenv("NOTION_API_KEY")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
 
-# ✅ Initialize OpenAI client (v1+ syntax)
+# ✅ Check if API keys are loading
+if not openai_api_key:
+    raise ValueError("❌ OPENAI_API_KEY not loaded. Check your .env file.")
+if not notion_token:
+    raise ValueError("❌ NOTION_API_KEY not loaded. Check your .env file.")
+if not notion_database_id:
+    raise ValueError("❌ NOTION_DATABASE_ID not loaded. Check your .env file.")
+
+# ✅ Initialize OpenAI client (v1.x)
 client = openai.OpenAI(api_key=openai_api_key)
 
 print("🔁 Asking GPT for your test win log...")
