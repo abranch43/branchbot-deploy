@@ -3,25 +3,32 @@ import openai
 import requests
 from dotenv import load_dotenv
 
-# ✅ Load .env file from the same directory
+# ✅ Load environment variables from .env file
 load_dotenv()
 
-# ✅ Pull environment variables
+# ✅ Set your keys
 openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_project_id = os.getenv("OPENAI_PROJECT_ID")  # NEW line
 notion_token = os.getenv("NOTION_API_KEY")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
 
-# ✅ Check if API keys are loaded
+# ✅ Validate environment variables
 if not openai_api_key:
-    raise ValueError("❌ OPENAI_API_KEY not loaded. Check your .env file.")
+    raise ValueError("❌ Missing OPENAI_API_KEY")
+if not openai_project_id:
+    raise ValueError("❌ Missing OPENAI_PROJECT_ID")  # NEW line
 if not notion_token:
-    raise ValueError("❌ NOTION_API_KEY not loaded. Check your .env file.")
+    raise ValueError("❌ Missing NOTION_API_KEY")
 if not notion_database_id:
-    raise ValueError("❌ NOTION_DATABASE_ID not loaded. Check your .env file.")
+    raise ValueError("❌ Missing NOTION_DATABASE_ID")
 
-# ✅ Set up OpenAI client (new v1+ SDK)
-client = openai.OpenAI(api_key=openai_api_key)
+# ✅ OpenAI Client for project-based key
+client = openai.OpenAI(
+    api_key=openai_api_key,
+    project=openai_project_id
+)
 
+# ✅ Use GPT to generate a motivational message
 print("🔁 Asking GPT for your test win log...")
 response = client.chat.completions.create(
     model="gpt-4",
@@ -32,10 +39,10 @@ response = client.chat.completions.create(
         }
     ]
 )
-
 message = response.choices[0].message.content
 print("🧠 GPT Message:", message)
 
+# ✅ Send to Notion
 print("📤 Sending to Notion...")
 notion_url = "https://api.notion.com/v1/pages"
 headers = {
