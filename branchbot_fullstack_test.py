@@ -1,19 +1,20 @@
 import os
+import openai
 import requests
-from openai import OpenAI
 from dotenv import load_dotenv
 
-# ✅ Load environment variables from .env
+# 🔄 Load environment variables from .env
 load_dotenv()
 
-# ✅ Initialize OpenAI client with environment-secured key
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# ✅ Load Notion credentials
+# ✅ Secure API Keys
+openai_api_key = os.getenv("OPENAI_API_KEY")
 notion_token = os.getenv("NOTION_API_KEY")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
 
-# ✅ Generate GPT-4 motivational message
+# ✅ Initialize OpenAI client (v1.0+ syntax)
+client = openai.OpenAI(api_key=openai_api_key)
+
+# 🔁 Ask GPT for motivational win log
 print("🔁 Asking GPT for your test win log...")
 response = client.chat.completions.create(
     model="gpt-4",
@@ -24,11 +25,10 @@ response = client.chat.completions.create(
         }
     ]
 )
-
 message = response.choices[0].message.content
-print("✅ GPT Message:", message)
+print("🧠 GPT Message:", message)
 
-# ✅ Push message to Notion
+# 📤 Push to Notion
 print("📤 Sending to Notion...")
 notion_url = "https://api.notion.com/v1/pages"
 headers = {
@@ -41,7 +41,7 @@ payload = {
     "properties": {
         "Name": {"title": [{"text": {"content": "BranchBot Full Stack Test"}}]},
         "Category": {"rich_text": [{"text": {"content": "System Check"}}]},
-        "Description": {"rich_text": [{"text": {"content": message}}]}
+        "Description": {"rich_text": [{"text": {"content": message}}]},
     }
 }
 
