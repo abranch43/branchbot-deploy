@@ -1,15 +1,18 @@
 import os
+import openai
 import requests
-from openai import OpenAI
 from dotenv import load_dotenv
 
-# ✅ Load environment variables from .env file
+# ✅ Load .env variables
 load_dotenv()
 
-# ✅ Get credentials from env
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Get API credentials
+openai_api_key = os.getenv("OPENAI_API_KEY")
 notion_token = os.getenv("NOTION_API_KEY")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
+
+# ✅ Initialize OpenAI client (v1+ syntax)
+client = openai.OpenAI(api_key=openai_api_key)
 
 print("🔁 Asking GPT for your test win log...")
 response = client.chat.completions.create(
@@ -21,8 +24,9 @@ response = client.chat.completions.create(
         }
     ]
 )
+
 message = response.choices[0].message.content
-print("✅ GPT Message:", message)
+print("🧠 GPT Message:", message)
 
 print("📤 Sending to Notion...")
 notion_url = "https://api.notion.com/v1/pages"
@@ -36,7 +40,7 @@ payload = {
     "properties": {
         "Name": {"title": [{"text": {"content": "BranchBot Full Stack Test"}}]},
         "Category": {"rich_text": [{"text": {"content": "System Check"}}]},
-        "Description": {"rich_text": [{"text": {"content": message}}]},
+        "Description": {"rich_text": [{"text": {"content": message}}]}
     }
 }
 
@@ -44,4 +48,4 @@ res = requests.post(notion_url, headers=headers, json=payload)
 if res.status_code in (200, 201):
     print("✅ Notion log created successfully.")
 else:
-    print("❌ Notion log failed:", res.status_code, res.json())
+    print("❌ Notion log failed:", res.status_code, res.text)
