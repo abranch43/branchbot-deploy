@@ -28,49 +28,69 @@
 
 ---
 
-## 🛠️ Step-by-Step Setup
+## 🛠️ Deploy Steps (Super Short)
 
-1. **Copy & Commit:**  
-   - Paste this `README.md` into your repo.
-   - Commit and push to GitHub.
+1. **Click Deploy:**  
+   - Use the Railway Deploy button above.
 
-2. **Click Deploy:**  
-   - Hit the Railway Deploy button above.
+2. **Set Variables in Railway:**  
+   - `STRIPE_WEBHOOK_SECRET` (starts with whsec_...)
+   - `GUMROAD_WEBHOOK_SECRET` (any shared secret you’ll also use in Gumroad)
+   - (optional) `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`
 
-3. **Set Environment Variables:**  
-   In Railway dashboard, set:
-   - `STRIPE_WEBHOOK_SECRET` (**required**)
-   - `GUMROAD_WEBHOOK_SECRET` (**required**)
-   - `OPENAI_API_KEY` *(optional, for advanced features)*
-   - `SLACK_WEBHOOK_URL` *(optional, for notifications)*
+3. **Wait for branchberg-api to turn green**  
+   - Copy its Public Domain.
 
-4. **Configure Webhooks:**
-   - Get your API URL from the Railway dashboard (e.g., `https://branchberg-api.up.railway.app`)
-   - Set Stripe webhook endpoint to:
-     ```
-     https://branchberg-api.up.railway.app/webhook/stripe
-     ```
-   - Set Gumroad webhook endpoint to:
-     ```
-     https://branchberg-api.up.railway.app/webhook/gumroad
-     ```
+4. **Health check:**  
+   - Visit: `https://<API>/health`  
+   - Should return: `{"status":"ok"}`
 
-5. **Test End-to-End:**
-   - Use these curl commands to send test events:
+5. **Point webhooks to these endpoints:**  
+   - **Stripe:** `https://<YOUR-API-DOMAIN>/webhooks/stripe`
+   - **Gumroad:** `https://<YOUR-API-DOMAIN>/webhooks/gumroad`
 
-     **Stripe Test:**
-     ```bash
-     curl -X POST https://branchberg-api.up.railway.app/webhook/stripe \
-       -H "Content-Type: application/json" \
-       -d '{"type":"payment_intent.succeeded","data":{"object":{"amount":5000}}}'
-     ```
+6. **Open your dashboard service URL**  
+   - Totals will auto-refresh every ~10s.
 
-     **Gumroad Test:**
-     ```bash
-     curl -X POST https://branchberg-api.up.railway.app/webhook/gumroad \
-       -H "Content-Type: application/json" \
-       -d '{"sale":{"price":2000,"created_at":"2025-08-08T20:32:53Z"}}'
-     ```
+---
+
+## 🕹️ Webhook Configuration
+
+- **Stripe:**  
+  - Go to Stripe Dashboard → Developers → Webhooks
+  - Add endpoint:  
+    ```
+    https://<YOUR-API-DOMAIN>/webhooks/stripe
+    ```
+  - Use signing secret: `STRIPE_WEBHOOK_SECRET`
+
+- **Gumroad:**  
+  - Go to Gumroad Settings → Advanced → Webhooks
+  - Add endpoint:  
+    ```
+    https://<YOUR-API-DOMAIN>/webhooks/gumroad
+    ```
+  - Use signing secret: `GUMROAD_WEBHOOK_SECRET`
+
+---
+
+## 🧪 Quick Live Test
+
+**Stripe (from your machine):**
+```bash
+stripe listen --forward-to https://<YOUR-API-DOMAIN>/webhooks/stripe
+stripe trigger checkout.session.completed
+```
+
+**Gumroad (test):**
+```bash
+curl -X POST https://<YOUR-API-DOMAIN>/webhooks/gumroad \
+  -F seller_id=dummy -F product_id=toolkit -F email=tester@example.com \
+  -F price=89700 -F currency=USD -F order_number=ORD123 \
+  -F signature=$(python - <<'PY'
+import hmac,hashlib;print(hmac.new(b'YOUR_SHARED_SECRET', b'ORD123', hashlib.sha256).hexdigest())
+PY)
+```
 
 ---
 
@@ -126,26 +146,6 @@ branchbot-deploy/
 
 ---
 
-## 🕹️ Webhook Configuration
-
-- **Stripe:**  
-  - Go to Stripe Dashboard → Developers → Webhooks
-  - Add endpoint:  
-    ```
-    https://branchberg-api.up.railway.app/webhook/stripe
-    ```
-  - Use signing secret: `STRIPE_WEBHOOK_SECRET`
-
-- **Gumroad:**  
-  - Go to Gumroad Settings → Advanced → Webhooks
-  - Add endpoint:  
-    ```
-    https://branchberg-api.up.railway.app/webhook/gumroad
-    ```
-  - Use signing secret: `GUMROAD_WEBHOOK_SECRET`
-
----
-
 ## 💰 Live Revenue Tracking
 
 Once deployed, your dashboard shows:
@@ -173,14 +173,14 @@ Once deployed, your dashboard shows:
 
 ## ❓ FAQ
 
-- **Can I use only Stripe or only Gumroad?**  
-  Yes. Set only the relevant webhook secret and endpoint.
+- **API 404?**  
+  Make sure it’s `/webhooks/...` plural.
 
-- **Is local dev required?**  
-  No. One-click deploy is all you need, but local dev is supported!
+- **Dashboard shows $0?**  
+  Trigger the tests above; then refresh.
 
-- **How do I test?**  
-  Use the provided curl commands or trigger real webhooks from Stripe/Gumroad.
+- **Health not OK?**  
+  Check Railway logs on branchberg-api; verify `DATABASE_URL` exists (Postgres plugin).
 
 ---
 
