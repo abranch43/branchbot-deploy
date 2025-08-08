@@ -1,0 +1,4 @@
+fastapi==0.68.0
+stripe==2.55.0
+gumroad==1.0.0
+streamlit==1.0.0

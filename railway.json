@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "branchberg/app/main.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "branchberg/app/main.py" }
+  ]
+}
