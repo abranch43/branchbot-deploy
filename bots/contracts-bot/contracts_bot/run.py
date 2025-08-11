@@ -3,7 +3,9 @@ import json
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Set
+from pathlib import Path
+import yaml
 
 from .utils import (
     load_settings,
@@ -12,13 +14,10 @@ from .utils import (
     write_json_atomic,
     write_csv_atomic,
     read_json_file,
-    dedupe_by_solicitation_id,
 )
-from .scrapers.sam_gov import SamGovScraper
-from .scrapers.missouribuys import MissouriBuysScraper
-from .sinks.csv_sink import CsvSink
-from .sinks.notion_sink import NotionSink
-from .sinks.google_sheets_sink import GoogleSheetsSink
+from .adapters.base import Opportunity
+from .adapters.sam_api import SamApiAdapter
+from .adapters.mobuys_rss import MoBuysAdapter
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -26,90 +25,127 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser("run", help="Run all configured sources")
-    run.add_argument("--since", type=int, default=7, help="Only include items posted in the last N days")
+    run.add_argument("--since", type=int, default=7, help="Only include items posted in the last N days (adapters may ignore)")
 
     return parser.parse_args(argv)
 
 
+def load_contract_filters() -> Dict[str, List[str]]:
+    cfg_path = os.path.join("config", "contracts.yaml")
+    if os.path.exists(cfg_path):
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+            return data.get("filters", {})
+    return {"keywords": [], "regions": []}
+
+
+def normalize_list(val: Any) -> List[str]:
+    if not val:
+        return []
+    if isinstance(val, list):
+        return [str(x).lower() for x in val]
+    return [str(val).lower()]
+
+
+def apply_filters(opps: List[Opportunity], filters: Dict[str, List[str]]) -> List[Opportunity]:
+    kw = set(normalize_list(filters.get("keywords")))
+    rg = set(normalize_list(filters.get("regions")))
+    if not kw and not rg:
+        return opps
+    filtered: List[Opportunity] = []
+    for o in opps:
+        hay = f"{o.title} {o.agency} {o.location or ''} {o.category or ''}".lower()
+        ok_kw = (not kw) or any(k in hay for k in kw)
+        ok_rg = (not rg) or any(r in hay for r in rg)
+        if ok_kw and ok_rg:
+            filtered.append(o)
+    return filtered
+
+
+def write_markdown_report(path: str, opps: List[Opportunity]) -> None:
+    by_source: Dict[str, List[Opportunity]] = {}
+    for o in opps:
+        by_source.setdefault(o.source, []).append(o)
+    for v in by_source.values():
+        v.sort(key=lambda x: (x.due_date or "9999-12-31"))
+    lines: List[str] = ["# Opportunities", ""]
+    for source, items in sorted(by_source.items()):
+        lines.append(f"## {source}")
+        lines.append("")
+        for o in items:
+            lines.append(f"- [{o.title}]({o.url}) — {o.agency} — due: {o.due_date or 'N/A'} (id: {o.id})")
+        lines.append("")
+    Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+
+def create_github_issues(new_opps: List[Opportunity]) -> None:
+    token = os.getenv("GH_TOKEN")
+    repo = os.getenv("GITHUB_REPOSITORY")
+    if not token or not repo or not new_opps:
+        return
+    import requests
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    api = f"https://api.github.com/repos/{repo}/issues"
+    for o in new_opps[:25]:
+        title = f"{o.agency} – {o.title} (due {o.due_date or 'N/A'})"
+        body = f"Source: {o.source}\nURL: {o.url}\nAgency: {o.agency}\nLocation: {o.location or ''}\nCategory: {o.category or ''}\nID: {o.id}"
+        payload = {"title": title, "body": body, "labels": ["opportunity"]}
+        try:
+            requests.post(api, headers=headers, json=payload, timeout=15)
+        except Exception:
+            continue
+
+
 def run_all(since_days: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    settings = load_settings()
-    output_dir = settings.get("output_dir", "data/contracts")
-    logs_dir = settings.get("logs_dir", "logs")
-    ensure_dirs([output_dir, logs_dir])
+    output_dir = os.path.join("data")
+    logs_dir = os.path.join("logs")
+    ensure_dirs([output_dir, logs_dir, ".cache", "reports", os.path.join("data", "import")])
     logger = get_logger(os.path.join(logs_dir, "contracts_bot.log"))
 
-    start_time = datetime.now(timezone.utc)
-    logger.info("Starting contracts bot run")
+    filters = load_contract_filters()
 
-    cutoff = start_time - timedelta(days=since_days)
-
-    all_items: List[Dict[str, Any]] = []
-
-    scrapers = [
-        SamGovScraper(),
-        MissouriBuysScraper(),
-    ]
-
-    for scraper in scrapers:
+    adapters = [SamApiAdapter(), MoBuysAdapter()]
+    opps: List[Opportunity] = []
+    for ad in adapters:
         try:
-            items = scraper.fetch(cutoff=cutoff)
-            logger.info("Scraper completed: %s count=%s", scraper.source_name, len(items))
-            all_items.extend(items)
-        except Exception as ex:  # noqa: BLE001
-            logger.exception("Scraper failed: %s", getattr(scraper, "source_name", "unknown"))
+            data = ad.fetch(since_days=since_days)
+            logger.info("Adapter %s returned %s items", ad.source_name, len(data))
+            opps.extend(data)
+        except Exception:
+            logger.exception("Adapter failed: %s", getattr(ad, 'source_name', 'unknown'))
 
-    # Dedupe by solicitation_id
-    deduped_items, previously_seen = dedupe_by_solicitation_id(all_items, output_dir)
+    # apply filters
+    opps = apply_filters(opps, filters)
 
-    # Sort
-    def parsed_date(date_str: str | None) -> datetime:
-        if not date_str:
-            return datetime.min.replace(tzinfo=timezone.utc)
-        try:
-            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        except Exception:  # noqa: BLE001
-            return datetime.min.replace(tzinfo=timezone.utc)
+    # dedupe by id with cache
+    cache_path = os.path.join(".cache", "opps.json")
+    seen_ids: Set[str] = set(read_json_file(cache_path) or [])
+    new_ids: Set[str] = set(o.id for o in opps if o.id not in seen_ids)
+    all_ids = sorted(list(seen_ids | set(o.id for o in opps)))
+    write_json_atomic(cache_path, all_ids)
 
-    deduped_items.sort(key=lambda x: (
-        parsed_date(x.get("posted_date")),
-        (datetime.max.replace(tzinfo=timezone.utc) if not x.get("due_date") else parsed_date(x.get("due_date"))),
-    ), reverse=True)
+    # write outputs
+    opps_json_path = os.path.join("data", "opportunities.json")
+    write_json_atomic(opps_json_path, [o.__dict__ for o in opps])
 
-    date_str = start_time.strftime("%Y-%m-%d")
-    daily_json_path = os.path.join(output_dir, f"{date_str}.json")
-    latest_json_path = os.path.join(output_dir, "latest.json")
-    latest_csv_path = os.path.join(output_dir, "latest.csv")
-    meta_path = os.path.join(output_dir, "latest.meta.json")
+    report_path = os.path.join("reports", "opportunities.md")
+    write_markdown_report(report_path, opps)
 
-    write_json_atomic(daily_json_path, deduped_items)
-    write_json_atomic(latest_json_path, deduped_items)
-
-    CsvSink().write(latest_csv_path, deduped_items)
-
-    new_ids = sorted(list({i["solicitation_id"] for i in deduped_items} - previously_seen))
     meta = {
-        "created_at": start_time.isoformat(),
-        "total": len(deduped_items),
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "total": len(opps),
         "new_count": len(new_ids),
-        "new_ids": new_ids,
+        "new_ids": sorted(list(new_ids)),
         "since_days": since_days,
     }
-    write_json_atomic(meta_path, meta)
 
-    sinks_cfg = settings.get("sinks", {})
-    if sinks_cfg.get("notion"):
-        try:
-            NotionSink().write(deduped_items)
-        except Exception:
-            logger.exception("Notion sink failed")
-    if sinks_cfg.get("google_sheets"):
-        try:
-            GoogleSheetsSink().write(latest_csv_path)
-        except Exception:
-            logger.exception("Google Sheets sink failed")
+    # issues for new
+    if new_ids:
+        create_github_issues([o for o in opps if o.id in new_ids])
 
-    logger.info("Contracts bot run complete: total=%s new=%s", len(deduped_items), len(new_ids))
-    return deduped_items, meta
+    return [o.__dict__ for o in opps], meta
 
 
 def run_main() -> None:

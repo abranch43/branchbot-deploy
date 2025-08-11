@@ -8,18 +8,26 @@ function isValidEmail(email: string): boolean {
   return /.+@.+\..+/.test(email);
 }
 
-async function sendEmail(name: string, email: string, company?: string, message?: string) {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, EMAIL_TO } = process.env as Record<string, string>;
-  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_TO) return;
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: parseInt(SMTP_PORT || '587', 10),
-    secure: false,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
-  const subject = `[Lead] ${name} <${email}>`;
-  const text = `New lead\nName: ${name}\nEmail: ${email}\nCompany: ${company || ''}\nMessage: ${message || ''}`;
-  await transporter.sendMail({ from: EMAIL_FROM, to: EMAIL_TO, subject, text });
+function getEnv(name: string, fallback?: string): string | undefined {
+  return (process.env[name] as string) || fallback;
+}
+
+async function sendMail(to: string, subject: string, text: string) {
+  const host = getEnv('SMTP_HOST');
+  const port = parseInt(getEnv('SMTP_PORT', '587') || '587', 10);
+  const user = getEnv('SMTP_USER');
+  const pass = getEnv('SMTP_PASS');
+  const from = getEnv('FROM_EMAIL') || getEnv('EMAIL_FROM') || '';
+  if (!host || !user || !pass || !from) return; // graceful no-op
+  const transporter = nodemailer.createTransport({ host, port, secure: false, auth: { user, pass } });
+  await transporter.sendMail({ from, to, subject, text });
+}
+
+function getLeadsPath(): string {
+  const override = process.env.LEADS_FILE;
+  if (override) return override;
+  const repoRoot = path.join(process.cwd(), '..', '..');
+  return path.join(repoRoot, 'data', 'leads.json');
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -27,32 +35,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  const { name, email, company, message } = req.body || {};
-  if (!name || !email || !isValidEmail(email)) {
+  const { name, email, company, phone, message } = req.body || {};
+  if (!name || !email || !company || !isValidEmail(email)) {
     res.status(400).json({ error: 'Invalid input' });
     return;
   }
   const record = {
     id: uuidv4(),
     name: String(name).slice(0, 200),
-    email: String(email).slice(0, 200),
-    company: company ? String(company).slice(0, 200) : '',
+    email: String(email).slice(0, 200).toLowerCase(),
+    company: String(company).slice(0, 200),
+    phone: phone ? String(phone).slice(0, 50) : '',
     message: message ? String(message).slice(0, 2000) : '',
     created_at: new Date().toISOString(),
     source_ip: (req.headers['x-forwarded-for'] as string) || (req.socket as any).remoteAddress || '',
   };
+
   try {
-    const repoRoot = path.join(process.cwd(), '..', '..');
-    const leadsPath = path.join(repoRoot, 'data', 'leads.json');
+    const leadsPath = getLeadsPath();
     let arr: any[] = [];
     if (fs.existsSync(leadsPath)) {
-      const current = fs.readFileSync(leadsPath, 'utf-8');
-      try { arr = JSON.parse(current) } catch { arr = []; }
+      try { arr = JSON.parse(fs.readFileSync(leadsPath, 'utf-8')); } catch { arr = []; }
     }
-    arr.push(record);
-    fs.writeFileSync(leadsPath, JSON.stringify(arr, null, 2));
+    // dedupe by email (keep first; if new email not present, append)
+    const exists = arr.find((x: any) => (x.email || '').toLowerCase() === record.email);
+    if (!exists) {
+      arr.push(record);
+      fs.mkdirSync(path.dirname(leadsPath), { recursive: true });
+      fs.writeFileSync(leadsPath, JSON.stringify(arr, null, 2));
+    }
   } catch (err) {
+    // ignore FS errors in serverless
   }
-  try { await sendEmail(record.name, record.email, record.company, record.message); } catch {}
+
+  const toInternal = getEnv('TO_EMAIL') || getEnv('EMAIL_TO');
+  const fromEmail = getEnv('FROM_EMAIL') || getEnv('EMAIL_FROM') || '';
+
+  // receipt to lead
+  try {
+    await sendMail(record.email, 'Thanks — we received your request', `Hi ${record.name},\n\nWe received your request. We will reach out shortly.\n\n— A+ Enterprise LLC`);
+  } catch {}
+  // internal alert
+  try {
+    if (toInternal) {
+      const summary = `New lead\nName: ${record.name}\nEmail: ${record.email}\nCompany: ${record.company}\nPhone: ${record.phone}\nMessage: ${record.message}`;
+      await sendMail(toInternal, '[Lead] ' + record.name + ' <' + record.email + '>', summary);
+    }
+  } catch {}
+
   res.status(200).json({ ok: true });
 }
