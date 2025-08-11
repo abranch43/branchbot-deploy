@@ -200,3 +200,24 @@ MIT
 3) Enable Actions → `.github/workflows/daily-scan.yml`
 4) Deploy `/apps/leadgen-site` to Vercel and paste the URL into `docs/README.md`
 5) Run `ops/win/run_once.ps1` to verify end-to-end
+
+## Windows quick start
+```powershell
+cd $env:USERPROFILE\branchbot-deploy
+. .\.venv\Scripts\Activate.ps1
+# Install deps
+pip install -r requirements_branchbot.txt -U
+if (Test-Path requirements.final.txt) { pip install -r requirements.final.txt -U }
+# Ensure package resolves
+$env:PYTHONPATH = "$PWD\bots"
+# Run bot and tests
+python -m contracts_bot run --since 7
+pytest -q
+```
+
+Or use tasks:
+```powershell
+.\tasks.ps1 init
+.\tasks.ps1 runbot
+.\tasks.ps1 test
+```

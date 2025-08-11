@@ -6,3 +6,5 @@ pytest==8.3.2
 gspread==6.1.2
 google-auth==2.35.0
 PyYAML==6.0.2
+openai==0.28.1
+pydantic==1.10.22
