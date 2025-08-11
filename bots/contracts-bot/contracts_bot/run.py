@@ -98,10 +98,36 @@ def create_github_issues(new_opps: List[Opportunity]) -> None:
             continue
 
 
+def write_contracts_outputs(opps: List[Opportunity]) -> None:
+    """Write daily and latest JSON/CSV to data/contracts mapped from Opportunity."""
+    out_dir = os.path.join("data", "contracts")
+    ensure_dirs([out_dir])
+    date_str = datetime.utcnow().strftime("%Y-%m-%d")
+    daily_json = os.path.join(out_dir, f"{date_str}.json")
+    daily_csv = os.path.join(out_dir, f"{date_str}.csv")
+    latest_json = os.path.join(out_dir, "latest.json")
+    latest_csv = os.path.join(out_dir, "latest.csv")
+
+    rows = [{
+        "solicitation_id": o.id,
+        "title": o.title,
+        "agency": o.agency,
+        "due_date": o.due_date,
+        "url": o.url,
+        "source": o.source,
+        "posted_date": o.created_at,
+    } for o in opps]
+
+    write_json_atomic(daily_json, rows)
+    write_json_atomic(latest_json, rows)
+    write_csv_atomic(daily_csv, rows)
+    write_csv_atomic(latest_csv, rows)
+
+
 def run_all(since_days: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    output_dir = os.path.join("data")
+    output_root = os.path.join("data")
     logs_dir = os.path.join("logs")
-    ensure_dirs([output_dir, logs_dir, ".cache", "reports", os.path.join("data", "import")])
+    ensure_dirs([output_root, logs_dir, ".cache", "reports", os.path.join("data", "import")])
     logger = get_logger(os.path.join(logs_dir, "contracts_bot.log"))
 
     filters = load_contract_filters()
@@ -126,10 +152,14 @@ def run_all(since_days: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     all_ids = sorted(list(seen_ids | set(o.id for o in opps)))
     write_json_atomic(cache_path, all_ids)
 
-    # write outputs
+    # write normalized opportunities
     opps_json_path = os.path.join("data", "opportunities.json")
     write_json_atomic(opps_json_path, [o.__dict__ for o in opps])
 
+    # write contracts-format outputs
+    write_contracts_outputs(opps)
+
+    # markdown digest
     report_path = os.path.join("reports", "opportunities.md")
     write_markdown_report(report_path, opps)
 
