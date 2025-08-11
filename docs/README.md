@@ -18,17 +18,16 @@ python -m venv .venv && . .venv/bin/activate && pip install -r requirements_bran
 cd apps/leadgen-site && npm i && npm run dev
 ```
 
-## Environment variables (.env)
-- STRIPE_PAYMENT_URL: Stripe Payment Link URL
-- SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL, TO_EMAIL
-- SAM_API_KEY (optional)
-- GH_TOKEN (optional for Issue creation)
+## How to get live data
+1. Set `SAM_API_KEY` in `.env` (local) or repo Secrets (CI).
+2. Download MissouriBUYS CSV to `data/import/mobuys.csv` (headers: `id,title,agency,location,category,url,due_date,created_at`).
+3. Run:
+```bash
+PYTHONPATH=bots/contracts-bot python -m contracts_bot run --since 7
+```
+Outputs:
+- `data/opportunities.json` (normalized)
+- `data/contracts/YYYY-MM-DD.json` and `.csv` plus `latest.*`
+- `reports/opportunities.md`
 
-## Import MissouriBUYS CSV
-- Drop CSV at `data/import/mobuys.csv`
-- Headers: `id,title,agency,location,category,url,due_date,created_at`
-- Run: `PYTHONPATH=bots/contracts-bot python -m contracts_bot run --since 7`
-
-## Outputs
-- `data/opportunities.json` — normalized opportunities
-- `reports/opportunities.md` — digest grouped by source
+Note: SAM.gov API requires an account and API key. Sign up at `https://api.sam.gov/`.

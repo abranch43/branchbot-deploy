@@ -136,7 +136,11 @@ def run_all(since_days: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     opps: List[Opportunity] = []
     for ad in adapters:
         try:
-            data = ad.fetch(since_days=since_days)
+            if isinstance(ad, SamApiAdapter):
+                kws = filters.get("keywords") or []
+                data = ad.fetch(since_days=since_days, keywords=kws)
+            else:
+                data = ad.fetch(since_days=since_days)
             logger.info("Adapter %s returned %s items", ad.source_name, len(data))
             opps.extend(data)
         except Exception:
