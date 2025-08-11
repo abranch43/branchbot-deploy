@@ -12,7 +12,6 @@ exit /b 1
 :setup
 python -m venv .venv
 call .venv\Scripts\activate
-pip install -r requirements.txt
 pip install -r requirements_branchbot.txt
 exit /b 0
 
