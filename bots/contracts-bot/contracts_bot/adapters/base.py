@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Dict, List, Protocol
 
 
@@ -22,5 +21,4 @@ class Opportunity:
 class Adapter(Protocol):
     source_name: str
 
-    def fetch(self, **kwargs: Any) -> List[Opportunity]:
-        ...
+    def fetch(self, **kwargs: Any) -> List[Opportunity]: ...

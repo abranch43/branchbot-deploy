@@ -2,22 +2,16 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Any, Tuple, Set
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Set, Tuple
+
 import yaml
 
-from .utils import (
-    load_settings,
-    ensure_dirs,
-    get_logger,
-    write_json_atomic,
-    write_csv_atomic,
-    read_json_file,
-)
 from .adapters.base import Opportunity
-from .adapters.sam_api import SamApiAdapter
 from .adapters.mobuys_rss import MoBuysAdapter
+from .adapters.sam_api import SamApiAdapter
+from .utils import ensure_dirs, get_logger, read_json_file, write_csv_atomic, write_json_atomic
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -25,7 +19,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser("run", help="Run all configured sources")
-    run.add_argument("--since", type=int, default=7, help="Only include items posted in the last N days (adapters may ignore)")
+    run.add_argument(
+        "--since",
+        type=int,
+        default=7,
+        help="Only include items posted in the last N days (adapters may ignore)",
+    )
 
     return parser.parse_args(argv)
 
@@ -33,7 +32,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 def load_contract_filters() -> Dict[str, List[str]]:
     cfg_path = os.path.join("config", "contracts.yaml")
     if os.path.exists(cfg_path):
-        with open(cfg_path, "r", encoding="utf-8") as f:
+        with open(cfg_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
             return data.get("filters", {})
     return {"keywords": [], "regions": []}
@@ -73,7 +72,9 @@ def write_markdown_report(path: str, opps: List[Opportunity]) -> None:
         lines.append(f"## {source}")
         lines.append("")
         for o in items:
-            lines.append(f"- [{o.title}]({o.url}) — {o.agency} — due: {o.due_date or 'N/A'} (id: {o.id})")
+            lines.append(
+                f"- [{o.title}]({o.url}) — {o.agency} — due: {o.due_date or 'N/A'} (id: {o.id})"
+            )
         lines.append("")
     Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -86,6 +87,7 @@ def create_github_issues(new_opps: List[Opportunity]) -> None:
     if not token or not repo or not new_opps:
         return
     import requests
+
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
     api = f"https://api.github.com/repos/{repo}/issues"
     for o in new_opps[:25]:
@@ -108,15 +110,18 @@ def write_contracts_outputs(opps: List[Opportunity]) -> None:
     latest_json = os.path.join(out_dir, "latest.json")
     latest_csv = os.path.join(out_dir, "latest.csv")
 
-    rows = [{
-        "solicitation_id": o.id,
-        "title": o.title,
-        "agency": o.agency,
-        "due_date": o.due_date,
-        "url": o.url,
-        "source": o.source,
-        "posted_date": o.created_at,
-    } for o in opps]
+    rows = [
+        {
+            "solicitation_id": o.id,
+            "title": o.title,
+            "agency": o.agency,
+            "due_date": o.due_date,
+            "url": o.url,
+            "source": o.source,
+            "posted_date": o.created_at,
+        }
+        for o in opps
+    ]
 
     write_json_atomic(daily_json, rows)
     write_json_atomic(latest_json, rows)
@@ -144,7 +149,7 @@ def run_all(since_days: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
             logger.info("Adapter %s returned %s items", ad.source_name, len(data))
             opps.extend(data)
         except Exception:
-            logger.exception("Adapter failed: %s", getattr(ad, 'source_name', 'unknown'))
+            logger.exception("Adapter failed: %s", getattr(ad, "source_name", "unknown"))
 
     # apply filters
     opps = apply_filters(opps, filters)

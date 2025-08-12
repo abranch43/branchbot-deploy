@@ -1,16 +1,17 @@
 import json
-import os
-from typing import Any, Dict, Iterable, List, Set, Tuple
-from logging.handlers import RotatingFileHandler
 import logging
-from pathlib import Path
-import tempfile
+import os
 import shutil
+import tempfile
+from collections.abc import Iterable
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import Any, Dict, List, Set, Tuple
 
 
 def load_settings() -> Dict[str, Any]:
     config_path = os.path.join("config", "settings.json")
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -68,11 +69,13 @@ def write_csv_atomic(path: str, rows: List[Dict[str, Any]]) -> None:
 def read_json_file(path: str) -> Any | None:
     if not os.path.exists(path):
         return None
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
-def dedupe_by_solicitation_id(items: List[Dict[str, Any]], output_dir: str) -> Tuple[List[Dict[str, Any]], Set[str]]:
+def dedupe_by_solicitation_id(
+    items: List[Dict[str, Any]], output_dir: str
+) -> Tuple[List[Dict[str, Any]], Set[str]]:
     """Return (new_items, previously_seen_ids). Persist union to seen_ids.json."""
     seen_path = os.path.join(output_dir, "seen_ids.json")
     previously_seen: Set[str] = set(read_json_file(seen_path) or [])

@@ -1,5 +1,6 @@
-import os
 import datetime
+import os
+
 import openai
 import requests
 
@@ -91,9 +92,7 @@ def proposal_draft_agent(rfp_text):
     if not openai_client:
         print("OpenAI key required for proposal drafting.")
         return
-    messages = [
-        {"role": "user", "content": f"Create a proposal cover letter for: {rfp_text}"}
-    ]
+    messages = [{"role": "user", "content": f"Create a proposal cover letter for: {rfp_text}"}]
     resp = openai_client.chat.completions.create(model="gpt-4", messages=messages)
     cover_letter = resp.choices[0].message.content
     print("Draft cover letter:\n", cover_letter)

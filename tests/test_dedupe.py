@@ -1,9 +1,8 @@
-import os
 import sys
 from pathlib import Path
 
 # add bot package to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'bots' / 'contracts-bot'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "bots" / "contracts-bot"))
 
 from contracts_bot.utils import dedupe_by_solicitation_id  # type: ignore  # noqa: E402
 

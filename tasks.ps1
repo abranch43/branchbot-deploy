@@ -13,7 +13,13 @@ switch ($Task) {
   "runbot" {
     . .\.venv\Scripts\Activate.ps1
     $env:PYTHONPATH = (Resolve-Path .\bots\contracts-bot).Path
-    python -m contracts_bot run --since 7
+    python -m contracts_bot run --since 30
+  }
+  "scan_notify" {
+    . .\.venv\Scripts\Activate.ps1
+    $env:PYTHONPATH = (Resolve-Path .\bots\contracts-bot).Path
+    $json = python -m contracts_bot run --since 30
+    $json | python ops/notify.py
   }
   default {
     Write-Host "Usage: .\tasks.ps1 [init|test|runbot]"

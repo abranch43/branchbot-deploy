@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Dict, List
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -27,15 +28,19 @@ class MissouriBuysScraper:
                 title = cols[1] if len(cols) > 1 else ""
                 agency = cols[2] if len(cols) > 2 else "Missouri"
                 due = cols[3] if len(cols) > 3 else None
-                results.append({
-                    "solicitation_id": sol_id,
-                    "title": title,
-                    "agency": agency,
-                    "due_date": due,
-                    "url": f"https://missouribuys.mo.gov{href}" if href.startswith("/") else href,
-                    "source": self.source_name,
-                    "posted_date": None,
-                })
+                results.append(
+                    {
+                        "solicitation_id": sol_id,
+                        "title": title,
+                        "agency": agency,
+                        "due_date": due,
+                        "url": (
+                            f"https://missouribuys.mo.gov{href}" if href.startswith("/") else href
+                        ),
+                        "source": self.source_name,
+                        "posted_date": None,
+                    }
+                )
         except Exception:
             return []
         return results

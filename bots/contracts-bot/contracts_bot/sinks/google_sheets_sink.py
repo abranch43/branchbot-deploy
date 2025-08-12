@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -22,6 +23,6 @@ class GoogleSheetsSink:
             sh = gc.open(self.sheet_name)
         except Exception:
             sh = gc.create(self.sheet_name)
-        with open(csv_path, "r", encoding="utf-8") as f:
+        with open(csv_path, encoding="utf-8") as f:
             content = f.read()
         gc.import_csv(sh.id, content)

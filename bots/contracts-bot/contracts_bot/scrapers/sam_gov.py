@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from typing import Any, Dict, List
+
 import requests
 
 
@@ -44,7 +45,11 @@ class SamGovScraper:
                     posted = n.get("publishDate") or n.get("modifiedDate")
                     due = n.get("responseDeadLine")
                     try:
-                        posted_dt = datetime.fromisoformat(posted.replace("Z", "+00:00")) if posted else None
+                        posted_dt = (
+                            datetime.fromisoformat(posted.replace("Z", "+00:00"))
+                            if posted
+                            else None
+                        )
                     except Exception:
                         posted_dt = None
                     if posted_dt and posted_dt < cutoff:
