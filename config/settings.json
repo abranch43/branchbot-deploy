@@ -1,0 +1,22 @@
+{
+  "sam_gov": {
+    "keywords": ["janitorial", "facility support", "IT support"],
+    "max_results": 50
+  },
+  "missouribuys": {
+    "categories": ["janitorial", "services"],
+    "max_results": 50
+  },
+  "sinks": {
+    "csv": true,
+    "notion": false,
+    "google_sheets": false
+  },
+  "output_dir": "data/contracts",
+  "logs_dir": "logs",
+  "request": {
+    "timeout_seconds": 20,
+    "retries": 3,
+    "backoff_factor": 0.5
+  }
+}

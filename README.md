@@ -191,3 +191,33 @@ MIT
 ---
 
 > Ready for $50K/month live revenue tracking? Paste, commit, deploy – you're done!
+
+---
+
+## 🚀 Go Live in 10 Minutes (BranchBot)
+1) Create `.env` from `ops/.env.template`
+2) Set GitHub repo secrets (SMTP_* , STRIPE_CHECKOUT_URL, optional NOTION/GOOGLE/SAM)
+3) Enable Actions → `.github/workflows/daily-scan.yml`
+4) Deploy `/apps/leadgen-site` to Vercel and paste the URL into `docs/README.md`
+5) Run `ops/win/run_once.ps1` to verify end-to-end
+
+## Windows quick start
+```powershell
+cd $env:USERPROFILE\branchbot-deploy
+. .\.venv\Scripts\Activate.ps1
+# Install deps
+pip install -r requirements_branchbot.txt -U
+if (Test-Path requirements.final.txt) { pip install -r requirements.final.txt -U }
+# Ensure package resolves
+$env:PYTHONPATH = "$PWD\bots"
+# Run bot and tests
+python -m contracts_bot run --since 7
+pytest -q
+```
+
+Or use tasks:
+```powershell
+.\tasks.ps1 init
+.\tasks.ps1 runbot
+.\tasks.ps1 test
+```

@@ -1,0 +1,94 @@
+name: BranchBot Daily Scan
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -r requirements_branchbot.txt
+
+      - name: Run contracts bot
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          GOOGLE_SHEETS_JSON: ${{ secrets.GOOGLE_SHEETS_JSON }}
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
+          SAM_KEYWORDS: ${{ secrets.SAM_KEYWORDS }}
+        run: |
+          . .venv/bin/activate
+          PYTHONPATH=bots/contracts-bot python -m contracts_bot run --since 3 | tee run.out
+
+      - name: Check if data changed
+        id: changes
+        run: |
+          if git diff --quiet --exit-code -- data/contracts; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit data changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "branchbot"
+          git config user.email "branchbot@users.noreply.github.com"
+          git add data/contracts
+          git commit -m "chore(data): update contracts data [skip ci]"
+          git push
+
+      - name: Create issue summary
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="BranchBot: New opportunities $(date -u +%F)"
+          BODY=$(python - <<'PY'
+import json
+meta=json.load(open('data/contracts/latest.meta.json'))
+items=json.load(open('data/contracts/latest.json'))
+print(f"Found {meta.get('new_count',0)} new. Total: {meta.get('total',0)}. Since days: {meta.get('since_days',0)}.\n")
+for it in items[:10]:
+    print(f"- {it.get('title','Untitled')} | {it.get('agency','')} | due: {it.get('due_date','N/A')} | {it.get('url','')}")
+PY
+)
+          jq -n --arg title "$TITLE" --arg body "$BODY" '{title:$title, body:$body}' > issue.json
+          curl -s -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -X POST \
+            https://api.github.com/repos/${{ github.repository }}/issues \
+            -d @issue.json
+
+      - name: Notify via email
+        env:
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          . .venv/bin/activate
+          python ops/notify.py
+
+      - name: Pytests
+        run: |
+          . .venv/bin/activate
+          pytest -q
