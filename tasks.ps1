@@ -19,7 +19,16 @@ switch ($Task) {
     . .\.venv\Scripts\Activate.ps1
     $env:PYTHONPATH = (Resolve-Path .\bots\contracts-bot).Path
     $json = python -m contracts_bot run --since 30
-    $json | python ops/notify.py
+    $csvPath = $json | python ops/notify.py
+    "CSV => $csvPath"
+  }
+  "email_test" {
+    . .\.venv\Scripts\Activate.ps1
+    python ops/test_email.py
+  }
+  "health" {
+    . .\.venv\Scripts\Activate.ps1
+    python ops/healthcheck.py
   }
   default {
     Write-Host "Usage: .\tasks.ps1 [init|test|runbot]"

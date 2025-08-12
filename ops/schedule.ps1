@@ -15,10 +15,10 @@ if ($Action -eq "uninstall") {
 & .\.venv\Scripts\activate
 if (-not $?) { throw "Activate venv before running schedule.ps1" }
 
-$act1 = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$Root\tasks.ps1`" runbot"
+$act1 = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$Root\ops\logwrap.ps1`" runbot"
 $trg1 = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 60) -RepetitionDuration (New-TimeSpan -Days 30)
 
-$act2 = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$Root\tasks.ps1`" scan_notify"
+$act2 = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$Root\ops\logwrap.ps1`" scan_notify"
 $trg2 = New-ScheduledTaskTrigger -Daily -At 8:00am
 
 if (Get-ScheduledTask -TaskName $hourly -ErrorAction SilentlyContinue) { Unregister-ScheduledTask -TaskName $hourly -Confirm:$false }

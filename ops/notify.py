@@ -16,6 +16,12 @@ def load_json(path: str):
         return json.load(f)
 
 
+def _parse_recipients(to_value: str | None) -> list[str]:
+    if not to_value:
+        return []
+    return [e.strip() for e in to_value.split(",") if e.strip()]
+
+
 def send_email(subject: str, body: str, attachments: list[str] | None = None) -> None:
     host = os.getenv("SMTP_HOST")
     port = int(os.getenv("SMTP_PORT", "587"))
@@ -24,13 +30,15 @@ def send_email(subject: str, body: str, attachments: list[str] | None = None) ->
     email_from = os.getenv("FROM_EMAIL") or os.getenv("EMAIL_FROM") or os.getenv("ALERT_FROM")
     email_to = os.getenv("TO_EMAIL") or os.getenv("EMAIL_TO") or os.getenv("ALERT_TO")
 
-    if not all([email_from, email_to, host, user, password]):
+    recipients = _parse_recipients(email_to)
+
+    if not all([email_from, host, user, password]) or not recipients:
         print("Missing SMTP configuration; skipping email.")
         return
 
     msg = EmailMessage()
     msg["From"] = email_from
-    msg["To"] = email_to
+    msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
     msg.set_content(body)
 
@@ -43,19 +51,24 @@ def send_email(subject: str, body: str, attachments: list[str] | None = None) ->
                 data, maintype="text", subtype=subtype, filename=os.path.basename(apath)
             )
 
-    with smtplib.SMTP(host, port) as server:
-        server.starttls()
-        server.login(user, password)
-        server.send_message(msg)
+    try:
+        with smtplib.SMTP(host, port) as server:
+            server.starttls()
+            server.login(user, password)
+            server.send_message(msg)
+    except Exception as e:
+        print(f"Email send failed: {e}")
 
 
-def write_csv_from_payload(payload: dict) -> str:
+def write_csv_from_payload(payload: dict | list) -> str:
     outdir = Path("data/output")
     outdir.mkdir(parents=True, exist_ok=True)
     ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     csv_path = outdir / f"opps_{ts}.csv"
     fields = ["id", "title", "agency", "source", "link", "place", "published", "response_due"]
-    items = payload.get("items") or payload if isinstance(payload, list) else []
+    items = payload.get("items") if isinstance(payload, dict) else payload
+    if items is None:
+        items = []
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -112,6 +125,7 @@ def main() -> None:
         subject = f"[BranchBot] Failure detected ({datetime.utcnow().date().isoformat()})"
         body = f"A failure occurred. See logs at: {args.error}"
         send_email(subject, body)
+        print("")
         return
 
     meta = (
@@ -132,6 +146,8 @@ def main() -> None:
             [f"Found {len(opps)} total. New this run: {new_count}.", "", "Top items:", *top_lines]
         )
         send_email(subject, body, attachments=["reports/opportunities.md"])
+        csv_path = write_csv_from_payload(opps)
+        print(csv_path)
         return
 
     items = load_json("data/contracts/latest.json") or []
@@ -152,6 +168,8 @@ def main() -> None:
         ]
     )
     send_email(subject, body)
+    csv_path = write_csv_from_payload(items)
+    print(csv_path)
 
 
 if __name__ == "__main__":
