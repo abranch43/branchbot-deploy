@@ -1,0 +1,2 @@
+"""Family Tech microservice module."""
+

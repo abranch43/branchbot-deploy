@@ -1,0 +1,2 @@
+"""Contracts Compliance Pack module."""
+
