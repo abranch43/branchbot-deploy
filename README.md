@@ -1,5 +1,7 @@
 # branchbot-deploy
 
+[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
+
 > **One-Click Deploy Revenue Tracker**  
 > Instant API + Dashboard + PostgreSQL setup via Railway!
 
