@@ -22,6 +22,21 @@ def build_snapshot() -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_snapshot_from_data(*, gumroad_messages: int, gumroad_sales: int, fiverr_briefs: int, upwork_jobs: int) -> str:
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    lines = [
+        "# Funnels Pulse",
+        f"_Generated: {now}_",
+        "",
+        "## Summary",
+        f"- Gumroad: {gumroad_messages} new messages, {gumroad_sales} sales",
+        f"- Fiverr: {fiverr_briefs} new briefs",
+        f"- Upwork: {upwork_jobs} relevant jobs",
+        "",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Funnels Pulse snapshot (scaffold).")
     parser.add_argument(

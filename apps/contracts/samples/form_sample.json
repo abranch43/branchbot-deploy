@@ -1,0 +1,9 @@
+{
+  "id": "MO-BUYS-SAMPLE-002",
+  "buyer": { "name": "Acme Co.", "email": "buyer@acme.example" },
+  "items": [
+    { "sku": "FORM-001", "qty": 1, "price": 0.0 }
+  ],
+  "currency": "USD"
+}
+
