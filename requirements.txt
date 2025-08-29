@@ -1,4 +1,4 @@
-fastapi
-stripe
-gumroad
-streamlit
+reportlab
+pydantic
+typer
+pytest
