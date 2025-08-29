@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
 def build_snapshot() -> str:
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
         "# Funnels Pulse",
         f"_Generated: {now}_",
@@ -37,4 +37,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

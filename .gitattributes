@@ -1,0 +1,12 @@
+* text=auto
+
+# Ensure PDFs and other binaries are treated correctly
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.gz binary
+*.7z binary
+

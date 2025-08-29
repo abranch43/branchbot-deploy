@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -15,7 +15,7 @@ def generate_sample(out_dir: Path) -> None:
     # JSON receipt (sample)
     receipt = {
         "id": "MO-BUYS-SAMPLE-001",
-        "issued_at": datetime.utcnow().isoformat() + "Z",
+        "issued_at": datetime.now(timezone.utc).isoformat(),
         "buyer": {"name": "Sample Buyer", "email": "buyer@example.com"},
         "items": [{"sku": "FORM-001", "qty": 1, "price": 0}],
         "total": 0,
@@ -47,4 +47,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
