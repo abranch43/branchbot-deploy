@@ -1,4 +1,1 @@
-reportlab
-pydantic
-typer
 pytest
