@@ -35,3 +35,7 @@
 
 ## Definition of Done
 - Merged PR + passing tests + representative sample outputs committed under `out/`.
+
+## Dev Tooling (Optional)
+- Pre-commit hooks: `pip install pre-commit && pre-commit install` (uses `.pre-commit-config.yaml`).
+- Ruff config: `ruff.toml` (lint: E/F/I; format via `ruff format`).
