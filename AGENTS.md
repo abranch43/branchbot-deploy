@@ -39,3 +39,4 @@
 ## Dev Tooling (Optional)
 - Pre-commit hooks: `pip install pre-commit && pre-commit install` (uses `.pre-commit-config.yaml`).
 - Ruff config: `ruff.toml` (lint: E/F/I; format via `ruff format`).
+- Labels: PRs auto-labeled via `.github/labeler.yml`; labels are defined in `.github/labels.yml` and synced by workflow.

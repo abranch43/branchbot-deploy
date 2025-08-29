@@ -1,0 +1,27 @@
+contracts:
+  - "apps/contracts/**"
+  - "tests/apps/contracts/**"
+
+family:
+  - "apps/family/**"
+  - "tests/apps/family/**"
+
+funnels:
+  - "jobs/funnels/**"
+  - "tests/jobs/funnels/**"
+
+tests:
+  - "tests/**"
+
+ci:
+  - ".github/**"
+
+docs:
+  - "**/README.md"
+  - "AGENTS.md"
+
+chore:
+  - ".editorconfig"
+  - ".gitattributes"
+  - "requirements-dev.txt"
+
