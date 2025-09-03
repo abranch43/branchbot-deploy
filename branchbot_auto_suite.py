@@ -1,6 +1,6 @@
 import os
 import datetime
-import openai
+from openai import OpenAI
 import requests
 
 """BranchBot Auto Suite v1
@@ -14,16 +14,21 @@ Real credentials and API setup are required for full functionality.
 # These environment variables should be configured with the appropriate API
 # tokens or service account JSON paths.
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-NOTION_TOKEN = os.getenv("NOTION_API_KEY")
+NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 NOTION_PROPOSAL_DB = os.getenv("NOTION_PROPOSAL_DB")
 NOTION_TECHOPS_DB = os.getenv("NOTION_TECHOPS_DB")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GOOGLE_CREDS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
+# Security guard: disable risky integrations when SAFE_MODE=true
+SAFE_MODE = os.getenv("SAFE_MODE", "true").lower() == "true"
+if SAFE_MODE:
+    print("SAFE_MODE active: skipping external integrations.")
+
 # Initialize OpenAI client if key is provided
 openai_client = None
-if OPENAI_API_KEY:
-    openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
+if OPENAI_API_KEY and not SAFE_MODE:
+    openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def gmail_to_proposal_tracker(message):
@@ -34,6 +39,9 @@ def gmail_to_proposal_tracker(message):
     message : dict
         Parsed Gmail message metadata and attachments.
     """
+    if SAFE_MODE:
+        print("SAFE_MODE enabled. Notion integration skipped.")
+        return
     # Placeholder: integrate Gmail API to fetch message details
     if not NOTION_TOKEN or not NOTION_PROPOSAL_DB:
         print("Notion credentials missing. Cannot create proposal card.")
@@ -75,7 +83,7 @@ def daily_win_logger():
     # Placeholder: pull GitHub commits, Notion actions and calendar events
     if openai_client:
         resp = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": "Motivational quote"}],
         )
         quote = resp.choices[0].message.content
@@ -94,7 +102,10 @@ def proposal_draft_agent(rfp_text):
     messages = [
         {"role": "user", "content": f"Create a proposal cover letter for: {rfp_text}"}
     ]
-    resp = openai_client.chat.completions.create(model="gpt-4", messages=messages)
+    resp = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+    )
     cover_letter = resp.choices[0].message.content
     print("Draft cover letter:\n", cover_letter)
     # Placeholder: fetch capability statement from Drive and build pricing template
@@ -102,6 +113,9 @@ def proposal_draft_agent(rfp_text):
 
 def github_notion_sync(repo, commit_msg):
     """Log deploy/prod commits to Notion."""
+    if SAFE_MODE:
+        print("SAFE_MODE enabled. Commit logging skipped.")
+        return
     if "#deploy" in commit_msg or "#prod" in commit_msg:
         payload = {
             "parent": {"database_id": NOTION_TECHOPS_DB},

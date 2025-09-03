@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 import requests
 from dotenv import load_dotenv
 
@@ -8,16 +8,16 @@ load_dotenv()
 
 # ✅ Get credentials from environment
 openai_api_key = os.getenv("OPENAI_API_KEY")
-notion_token = os.getenv("NOTION_API_KEY")
+notion_token = os.getenv("NOTION_TOKEN")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
 
 # ✅ Initialize OpenAI client (v1.0+ syntax)
-client = openai.OpenAI(api_key=openai_api_key)
+client = OpenAI(api_key=openai_api_key)
 
 # 🔁 Ask GPT-4 for motivational win log
 print("🔁 Asking GPT for your test win log...")
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="gpt-4o-mini",
     messages=[
         {
             "role": "user",

@@ -6,8 +6,13 @@
 ---
 
 ## 🚀 Deploy Now
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?sourceRepo=https://github.com/abranch43/branchbot-deploy)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/YOUR-RAILWAY-TEMPLATE-LINK-HERE)
+## 🤖 AI-Verified by Codex
+
+- **IDE extension:** get inline AI guidance as you code.
+- **Cloud↔local handoff:** move changes between environments seamlessly.
+- **GitHub PR reviews:** Codex reviews every pull request for security, tests, and style.
 
 ---
 
@@ -37,6 +42,7 @@
    - `STRIPE_WEBHOOK_SECRET` (starts with whsec_...)
    - `GUMROAD_WEBHOOK_SECRET` (any shared secret you’ll also use in Gumroad)
    - (optional) `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`
+   - `SAFE_MODE=true` (disables risky external integrations in prod)
 
 3. **Wait for branchberg-api to turn green**  
    - Copy its Public Domain.
@@ -125,9 +131,19 @@ branchbot-deploy/
    pip install -r requirements.txt
    ```
 
-3. **Run API Locally:**
+3. **Run API Locally (auto-detect entrypoint):**
    ```bash
-   uvicorn api.main:app --reload
+   python - <<'PY'
+import importlib, uvicorn
+for mod in ("api.main", "branchberg.app.main"):
+    try:
+        uvicorn.run(importlib.import_module(mod).app, reload=True)
+        break
+    except Exception:
+        pass
+else:
+    print("No API entrypoint found.")
+PY
    ```
 
 4. **Run Dashboard Locally:**
@@ -143,6 +159,7 @@ branchbot-deploy/
      OPENAI_API_KEY=your_openai_key  # (optional)
      SLACK_WEBHOOK_URL=your_slack_url  # (optional)
      ```
+6. **Imports failing?** Set `PYTHONPATH=.` before running scripts.
 
 ---
 
