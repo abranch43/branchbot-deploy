@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 import requests
 from dotenv import load_dotenv
 
@@ -8,33 +8,30 @@ load_dotenv()
 
 # ✅ Set your keys (CLASSIC KEY ONLY)
 openai_api_key = os.getenv("OPENAI_API_KEY")
-notion_token = os.getenv("NOTION_API_KEY")
+notion_token = os.getenv("NOTION_TOKEN")
 notion_database_id = os.getenv("NOTION_DATABASE_ID")
 
 # ✅ Validate environment variables
 if not openai_api_key:
     raise ValueError("❌ Missing OPENAI_API_KEY")
 if not notion_token:
-    raise ValueError("❌ Missing NOTION_API_KEY")
+    raise ValueError("❌ Missing NOTION_TOKEN")
 if not notion_database_id:
     raise ValueError("❌ Missing NOTION_DATABASE_ID")
 
-# ✅ Set OpenAI API key (classic style)
-openai.api_key = openai_api_key
+# ✅ Initialize OpenAI client
+client = OpenAI(api_key=openai_api_key)
 
 # ✅ Ask GPT for motivational win log
 print("🔁 Asking GPT for your test win log...")
-response = openai.ChatCompletion.create(
-    model="gpt-4",
-    messages=[
-        {
-            "role": "user",
-            "content": "Write a motivational status log for Antonio Branch launching BranchBot Codex full stack."
-        }
-    ]
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{
+        "role": "user",
+        "content": "Write a motivational status log for Antonio Branch launching BranchBot Codex full stack."
+    }],
 )
-
-message = response["choices"][0]["message"]["content"]
+message = response.choices[0].message.content
 print("🧠 GPT Message:", message)
 
 # ✅ Send the message to Notion
