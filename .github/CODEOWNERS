@@ -1,0 +1,24 @@
+# Global code owners
+* @abranch43
+
+# Python files
+*.py @abranch43 @Copilot
+branchbot/ @abranch43 @Copilot
+branchberg/ @abranch43 @Copilot
+api/ @abranch43 @Copilot
+dashboard/ @abranch43 @Copilot
+database/ @abranch43 @Copilot
+
+# GitHub workflows and actions
+.github/ @abranch43 @Copilot
+.github/workflows/ @abranch43 @Copilot
+
+# Configuration files
+requirements*.txt @abranch43 @Copilot
+railway.json @abranch43 @Copilot
+Procfile @abranch43 @Copilot
+
+# Documentation
+README.md @abranch43
+CONTRIBUTING.md @abranch43
+SECURITY.md @abranch43
