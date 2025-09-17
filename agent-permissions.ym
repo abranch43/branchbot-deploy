@@ -1,0 +1,11 @@
+agents:
+  default: {can_read: ["**/*.py","**/*.js","**/*.md","**/*.yml","**/*.yaml","**/*.json"], can_write: false, can_run_tests: true, sandboxed: true}
+  cipher:  {can_read: ["invoices/**/*","financial/**/*","**/*.py","**/*.md"], can_write: false, can_run_tests: false, sandboxed: true}
+  alpha:   {can_read: ["**/*"], can_write: "propose_only", can_run_tests: true, sandboxed: true, escalate_to_human: true}
+  obelisk: {can_read: ["robots/**/*","protocols/**/*","**/*.py","**/*.md"], can_write: "propose_only", can_run_tests: false, sandboxed: true}
+  legacy:  {can_read: ["family/**/*","blessings/**/*","**/*.md","**/*.yaml"], can_write: "propose_only", sandboxed: true}
+escalation:
+  threshold_confidence: 0.85
+  require_manual_approval_for: ["database migrations","production deployments","file deletions","secret rotation","schema changes"]
+  approvers: ["antonio","alpha"]
+audit: {enabled: true, log_dir: ".branchbot/audit"}
