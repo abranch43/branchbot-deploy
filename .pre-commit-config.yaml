@@ -8,3 +8,5 @@
   rev: 24.8.0
   hooks:
     - id: black
+
+# ensure no BOM
