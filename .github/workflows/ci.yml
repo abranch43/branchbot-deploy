@@ -34,10 +34,5 @@ jobs:
             echo "No mypy config; skipping"
           fi
 
-      - name: Unit tests (if any)
-        run: |
-          if [ -d branchbot/tests ] || [ -d tests ]; then
-            pytest -q
-          else
-            echo "No tests directory; skipping"
-          fi
+      - name: Unit tests
+        run: pytest -q
