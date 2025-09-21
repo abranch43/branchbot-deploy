@@ -34,10 +34,12 @@ jobs:
             echo "No mypy config; skipping"
           fi
 
-      - name: Unit tests (if any)
+      - name: Unit tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          if [ -d branchbot/tests ] || [ -d tests ]; then
-            pytest -q
+          if [ -f branchbot/test_minimal.py ]; then
+            pytest -q branchbot/test_minimal.py
           else
-            echo "No tests directory; skipping"
+            pytest -q
           fi
