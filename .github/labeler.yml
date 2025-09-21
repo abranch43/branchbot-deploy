@@ -1,0 +1,4 @@
+﻿'chore:': ['**/*']
+'docs:': ['**/*.md']
+'feat:': ['branchbot/**', 'api/**', 'app/**']
+'fix:':  ['**/*.py']
