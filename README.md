@@ -1,4 +1,4 @@
-﻿# branchbot-deploy
+# branchbot-deploy
 
 [![Build Status](https://github.com/abranch43/branchbot-deploy/workflows/Quality%20Gates/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,33 +11,33 @@
 
 ---
 
-## ðŸ“‹ Table of Contents
+## 📋 Table of Contents
 
-- [Quick Start](#ðŸš€-deploy-now)
-- [Architecture](#ðŸ—ï¸-architecture)
-- [Features](#âœ…-whats-included)
-- [Deploy Steps](#ðŸ› ï¸-deploy-steps-super-short)
-- [Webhook Configuration](#ðŸ•¹ï¸-webhook-configuration)
-- [Local Development](#ðŸ§‘â€ðŸ’»-local-development-optional)
-- [Security](#ðŸ”’-security)
-- [Contributing](#ðŸ¤-contributing)
-- [Documentation](#ðŸ“š-documentation)
-- [License](#ðŸ“-license)
+- [Quick Start](#🚀-deploy-now)
+- [Architecture](#🏗️-architecture)
+- [Features](#✅-whats-included)
+- [Deploy Steps](#🛠️-deploy-steps-super-short)
+- [Webhook Configuration](#🕹️-webhook-configuration)
+- [Local Development](#🧑‍💻-local-development-optional)
+- [Security](#🔒-security)
+- [Contributing](#🤝-contributing)
+- [Documentation](#📚-documentation)
+- [License](#📝-license)
 
 ---
 
-## ðŸš€ Deploy Now
+## 🚀 Deploy Now
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?sourceRepo=https://github.com/abranch43/branchbot-deploy)
 
-## ðŸ¤– AI-Verified by Codex
+## 🤖 AI-Verified by Codex
 
 - **IDE extension:** get inline AI guidance as you code.
-- **Cloudâ†”local handoff:** move changes between environments seamlessly.
+- **Cloud↔local handoff:** move changes between environments seamlessly.
 - **GitHub PR reviews:** Codex reviews every pull request for security, tests, and style.
 
 ---
 
-## âœ… What's Included
+## ✅ What's Included
 
 - **One-Click Railway Deploy:**  
   Provisions API, Dashboard, and PostgreSQL automatically.
@@ -54,7 +54,7 @@
 
 ---
 
-## ðŸ—ï¸ Architecture
+## 🏗️ Architecture
 
 ```mermaid
 graph TB
@@ -91,14 +91,14 @@ graph TB
 
 ---
 
-## ðŸ› ï¸ Deploy Steps (Super Short)
+## 🛠️ Deploy Steps (Super Short)
 
 1. **Click Deploy:**  
    - Use the Railway Deploy button above.
 
 2. **Set Variables in Railway:**  
    - `STRIPE_WEBHOOK_SECRET` (starts with whsec_...)
-   - `GUMROAD_WEBHOOK_SECRET` (any shared secret youâ€™ll also use in Gumroad)
+   - `GUMROAD_WEBHOOK_SECRET` (any shared secret you’ll also use in Gumroad)
    - (optional) `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`
    - `SAFE_MODE=true` (disables risky external integrations in prod)
 
@@ -118,10 +118,10 @@ graph TB
 
 ---
 
-## ðŸ•¹ï¸ Webhook Configuration
+## 🕹️ Webhook Configuration
 
 - **Stripe:**  
-  - Go to Stripe Dashboard â†’ Developers â†’ Webhooks
+  - Go to Stripe Dashboard → Developers → Webhooks
   - Add endpoint:  
     ```
     https://<YOUR-API-DOMAIN>/webhooks/stripe
@@ -129,7 +129,7 @@ graph TB
   - Use signing secret: `STRIPE_WEBHOOK_SECRET`
 
 - **Gumroad:**  
-  - Go to Gumroad Settings â†’ Advanced â†’ Webhooks
+  - Go to Gumroad Settings → Advanced → Webhooks
   - Add endpoint:  
     ```
     https://<YOUR-API-DOMAIN>/webhooks/gumroad
@@ -138,7 +138,7 @@ graph TB
 
 ---
 
-## ðŸ§ª Quick Live Test
+## 🧪 Quick Live Test
 
 **Stripe (from your machine):**
 ```bash
@@ -158,16 +158,16 @@ PY)
 
 ---
 
-## âš¡ Project Structure
+## ⚡ Project Structure
 
 ```
 branchbot-deploy/
-â”œâ”€â”€ api/               # FastAPI backend (webhooks, DB)
-â”œâ”€â”€ dashboard/         # Streamlit dashboard (auto-refresh)
-â”œâ”€â”€ database/          # PostgreSQL models/migrations
-â”œâ”€â”€ README.md
-â”œâ”€â”€ requirements.txt
-â””â”€â”€ railway.json       # Railway project config
+├── api/               # FastAPI backend (webhooks, DB)
+├── dashboard/         # Streamlit dashboard (auto-refresh)
+├── database/          # PostgreSQL models/migrations
+├── README.md
+├── requirements.txt
+└── railway.json       # Railway project config
 ```
 
 - **`api/`**: Handles Stripe & Gumroad webhooks, revenue calculations
@@ -176,7 +176,7 @@ branchbot-deploy/
 
 ---
 
-## ðŸ§‘â€ðŸ’» Local Development (Optional)
+## 🧑‍💻 Local Development (Optional)
 
 1. **Clone Repo:**
    ```bash
@@ -221,7 +221,7 @@ PY
 
 ---
 
-## ðŸ’° Live Revenue Tracking
+## 💰 Live Revenue Tracking
 
 Once deployed, your dashboard shows:
 
@@ -236,7 +236,7 @@ Once deployed, your dashboard shows:
 
 ---
 
-## ðŸŽ¯ What Happens When You Click Deploy?
+## 🎯 What Happens When You Click Deploy?
 
 - **Railway provisions:**
   - `branchberg-api` service (FastAPI backend)
@@ -246,10 +246,10 @@ Once deployed, your dashboard shows:
 
 ---
 
-## â“ FAQ
+## ❓ FAQ
 
 - **API 404?**  
-  Make sure itâ€™s `/webhooks/...` plural.
+  Make sure it’s `/webhooks/...` plural.
 
 - **Dashboard shows $0?**  
   Trigger the tests above; then refresh.
@@ -259,11 +259,11 @@ Once deployed, your dashboard shows:
 
 ---
 
-## ðŸ”’ Security
+## 🔒 Security
 
 Security is a top priority for branchbot-deploy. We implement enterprise-grade security practices:
 
-### ðŸ›¡ï¸ Security Features
+### 🛡️ Security Features
 
 - **Webhook Signature Verification**: All webhooks are cryptographically verified
 - **Input Validation**: All inputs are validated and sanitized
@@ -272,11 +272,11 @@ Security is a top priority for branchbot-deploy. We implement enterprise-grade s
 - **Dependency Updates**: Automated via Dependabot
 - **Secret Management**: No secrets in code, environment variables only
 
-### ðŸš¨ Reporting Security Issues
+### 🚨 Reporting Security Issues
 
 Please see our [Security Policy](SECURITY.md) for reporting security vulnerabilities.
 
-### ðŸ”§ Security Best Practices
+### 🔧 Security Best Practices
 
 - Always use `SAFE_MODE=true` in production
 - Rotate webhook secrets regularly
@@ -285,7 +285,7 @@ Please see our [Security Policy](SECURITY.md) for reporting security vulnerabili
 
 ---
 
-## ðŸ¤ Contributing
+## 🤝 Contributing
 
 We welcome contributions from the community! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed instructions.
 
@@ -297,7 +297,7 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 4. **Make your changes following our style guide**
 5. **Submit a pull request**
 
-### ðŸ“‹ Development Standards
+### 📋 Development Standards
 
 - **Code Style**: PEP 8 with 4-space indentation
 - **Testing**: All changes must include tests
@@ -306,16 +306,16 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 
 ---
 
-## ðŸ“š Documentation
+## 📚 Documentation
 
-### ðŸ“– Available Documentation
+### 📖 Available Documentation
 
 - **[Contributing Guide](CONTRIBUTING.md)**: How to contribute to the project
 - **[Security Policy](SECURITY.md)**: Security guidelines and reporting
 - **[API Documentation](#)**: Coming soon - API endpoint documentation
-- **[Deployment Guide](#ðŸ› ï¸-deploy-steps-super-short)**: Step-by-step deployment instructions
+- **[Deployment Guide](#🛠️-deploy-steps-super-short)**: Step-by-step deployment instructions
 
-### ðŸ”— External Resources
+### 🔗 External Resources
 
 - **[Railway Documentation](https://docs.railway.app)**: Platform-specific guides
 - **[Stripe Webhooks](https://stripe.com/docs/webhooks)**: Webhook configuration
@@ -323,7 +323,7 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 
 ---
 
-## ðŸ“ License
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -340,5 +340,4 @@ This project uses open source software. All dependencies maintain their respecti
 
 ---
 
-> Ready for $50K/month live revenue tracking? Paste, commit, deploy â€“ you're done!
-
+> Ready for $50K/month live revenue tracking? Paste, commit, deploy – you're done!
