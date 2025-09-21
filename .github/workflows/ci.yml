@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps (best-effort)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -q -r requirements.txt || true
+          pip install -q pytest || true
+          pip install -q ruff || true
+          pip install -q mypy || true
+
+      - name: Ruff (if present)
+        run: ruff check . || true
+
+      - name: Mypy (if config present)
+        run: |
+          if [ -f mypy.ini ] || [ -f pyproject.toml ]; then
+            mypy .
+          else
+            echo "No mypy config; skipping"
+          fi
+
+      - name: Unit tests (if any)
+        run: |
+          if [ -d branchbot/tests ] || [ -d tests ]; then
+            pytest -q
+          else
+            echo "No tests directory; skipping"
+          fi
