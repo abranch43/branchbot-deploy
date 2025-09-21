@@ -1,6 +1,5 @@
 ﻿[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
-[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
-[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
+
 # branchbot-deploy
 
 [![Build Status](https://github.com/abranch43/branchbot-deploy/workflows/Quality%20Gates/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions)
