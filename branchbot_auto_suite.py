@@ -49,7 +49,9 @@ def gmail_to_proposal_tracker(message):
     payload = {
         "parent": {"database_id": NOTION_PROPOSAL_DB},
         "properties": {
-            "Name": {"title": [{"text": {"content": message.get("subject", "New RFP")}}]},
+            "Name": {
+                "title": [{"text": {"content": message.get("subject", "New RFP")}}]
+            },
             "Status": {"select": {"name": "Proposal Drafting"}},
         },
     }
