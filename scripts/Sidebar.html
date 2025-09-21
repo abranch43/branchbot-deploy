@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <title>A+ Workspace Setup</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Google Sans', Roboto, 'Segoe UI', sans-serif;
+        background: #f6f8fb;
+        color: #1f2933;
+      }
+
+      header {
+        padding: 16px 20px 8px;
+        border-bottom: 1px solid #e3e8ef;
+        background: #fff;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      main {
+        padding: 12px 20px 24px;
+      }
+
+      section {
+        margin-bottom: 20px;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+      }
+
+      section:last-of-type {
+        margin-bottom: 0;
+      }
+
+      section h2 {
+        margin: 0 0 12px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0b1f52;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 220px;
+        font-family: 'Roboto Mono', 'Source Code Pro', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        border: 1px solid #cbd2d9;
+        border-radius: 8px;
+        padding: 12px;
+        resize: vertical;
+        color: #102a43;
+        background: #f9fbff;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #3d8bfd;
+        box-shadow: 0 0 0 2px rgba(61, 139, 253, 0.15);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      button {
+        flex: 1 1 100%;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 8px;
+        background: #3d8bfd;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+      }
+
+      button.secondary {
+        background: #64748b;
+      }
+
+      button.danger {
+        background: #d14343;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.6;
+        box-shadow: none;
+      }
+
+      .toast {
+        position: fixed;
+        left: 24px;
+        right: 24px;
+        bottom: 24px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 13px;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(12px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+      }
+
+      .toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .toast.success {
+        background: linear-gradient(120deg, #00c853, #009688);
+      }
+
+      .toast.error {
+        background: linear-gradient(120deg, #f44336, #d32f2f);
+      }
+
+      .spinner {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        margin-top: 12px;
+        color: #3d8bfd;
+        font-size: 12px;
+        font-weight: 500;
+        gap: 8px;
+      }
+
+      body.is-working .spinner {
+        display: flex;
+      }
+
+      .spinner::before {
+        content: '';
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid rgba(61, 139, 253, 0.2);
+        border-top-color: #3d8bfd;
+        animation: spin 0.9s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>A+ Workspace Setup</h1>
+    </header>
+    <main>
+      <section aria-labelledby="config-heading">
+        <h2 id="config-heading">Config</h2>
+        <textarea id="configEditor" aria-label="Workspace configuration JSON"></textarea>
+        <div class="button-row" style="margin-top: 12px">
+          <button id="saveConfigBtn">Save Config</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="actions-heading">
+        <h2 id="actions-heading">Actions</h2>
+        <div class="button-row">
+          <button id="runSetupBtn" class="secondary">Run Setup</button>
+          <button id="backfillBtn" class="secondary">Backfill 14 Days</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="automations-heading">
+        <h2 id="automations-heading">Automations</h2>
+        <div class="button-row">
+          <button id="dailyTriggerBtn" class="secondary">Create Daily Trigger</button>
+          <button id="deleteTriggersBtn" class="danger">Delete Triggers</button>
+        </div>
+      </section>
+
+      <div class="spinner" role="status" aria-live="polite">
+        Working...
+      </div>
+    </main>
+
+    <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+    <script>
+      (function () {
+        var editor = document.getElementById('configEditor');
+        var buttons = Array.prototype.slice.call(document.querySelectorAll('button'));
+        var toast = document.getElementById('toast');
+        var toastTimer = null;
+
+        function setWorkingState(active) {
+          buttons.forEach(function (button) {
+            button.disabled = active;
+          });
+          document.body.classList.toggle('is-working', active);
+        }
+
+        function showToast(message, variant) {
+          clearTimeout(toastTimer);
+          toast.textContent = message;
+          toast.className = 'toast ' + (variant || 'success');
+          toast.classList.add('visible');
+          toastTimer = setTimeout(function () {
+            toast.classList.remove('visible');
+          }, 4000);
+        }
+
+        function handleFailure(error) {
+          setWorkingState(false);
+          var message = (error && error.message) || String(error || 'Unknown error');
+          showToast(message, 'error');
+          console.error(error);
+        }
+
+        function loadConfig() {
+          setWorkingState(true);
+          google.script.run
+            .withSuccessHandler(function (config) {
+              var text = '';
+              try {
+                text = JSON.stringify(config || {}, null, 2);
+              } catch (err) {
+                console.error('Failed to stringify config', err);
+                text = '{}';
+              }
+              editor.value = text;
+              setWorkingState(false);
+              showToast('Configuration loaded.', 'success');
+            })
+            .withFailureHandler(handleFailure)
+            .getConfig();
+        }
+
+        function persistConfig() {
+          var text = editor.value;
+          var parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (err) {
+            showToast('Invalid JSON: ' + err.message, 'error');
+            editor.focus();
+            return;
+          }
+
+          setWorkingState(true);
+          google.script.run
+            .withSuccessHandler(function (config) {
+              var serialized = JSON.stringify(config || {}, null, 2);
+              editor.value = serialized;
+              setWorkingState(false);
+              showToast('Configuration saved.');
+            })
+            .withFailureHandler(handleFailure)
+            .setConfig(parsed);
+        }
+
+        function runAction(name, args, successMessage) {
+          setWorkingState(true);
+          google.script.run
+            .withSuccessHandler(function () {
+              setWorkingState(false);
+              showToast(successMessage || 'Action completed.');
+            })
+            .withFailureHandler(handleFailure)
+            .runAction(name, args || {});
+        }
+
+        document.getElementById('saveConfigBtn').addEventListener('click', function () {
+          persistConfig();
+        });
+        document.getElementById('runSetupBtn').addEventListener('click', function () {
+          runAction('setup', null, 'Workspace setup completed.');
+        });
+        document.getElementById('backfillBtn').addEventListener('click', function () {
+          runAction('backfill', { days: 14 }, 'Backfill complete.');
+        });
+        document.getElementById('dailyTriggerBtn').addEventListener('click', function () {
+          runAction('dailyTrigger', null, 'Daily trigger created.');
+        });
+        document.getElementById('deleteTriggersBtn').addEventListener('click', function () {
+          runAction('deleteTriggers', null, 'Triggers removed.');
+        });
+
+        loadConfig();
+      })();
+    </script>
+  </body>
+</html>
