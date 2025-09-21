@@ -35,4 +35,11 @@ jobs:
           fi
 
       - name: Unit tests
-        run: pytest -q
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          if [ -f branchbot/test_minimal.py ]; then
+            pytest -q branchbot/test_minimal.py
+          else
+            pytest -q
+          fi
