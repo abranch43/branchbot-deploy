@@ -42,40 +42,32 @@ jobs:
 
       - name: Render social copy (always succeeds)
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           python ops/gumroad-agent/scripts/social_post_out.py || true
           mkdir -p rendered_social
-          # ensure files exist even if script short-circuited
-          [ -f rendered_social/x_pin.txt ] || echo "Starter Kit → {GUMROAD_BUNDLE_URL}\n$99 Discovery → {PAY_LINK}" > rendered_social/x_pin.txt
-          [ -f rendered_social/linkedin_pin.txt ] || echo "Starter Kit → {GUMROAD_BUNDLE_URL}\n$99 Discovery → {PAY_LINK}" > rendered_social/linkedin_pin.txt
+          # Ensure files exist even if script short-circuited; use single-quoted heredocs to avoid $ expansion
+          [ -f rendered_social/x_pin.txt ] || cat <<'EOF' > rendered_social/x_pin.txt
+Starter Kit → {GUMROAD_BUNDLE_URL}
+$99 Discovery → {PAY_LINK}
+EOF
+          [ -f rendered_social/linkedin_pin.txt ] || cat <<'EOF' > rendered_social/linkedin_pin.txt
+Starter Kit → {GUMROAD_BUNDLE_URL}
+$99 Discovery → {PAY_LINK}
+EOF
           ls -la rendered_social
 
-      - name: Create branch for social artifacts
-        run: |
-          set -euxo pipefail
-          BRANCH="automation/gumroad-social-${{ github.run_id }}"
-          git checkout -b "$BRANCH"
-          git add -A rendered_social
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "chore: add rendered social copy from sync run ${{ github.run_id }}" || echo "No changes to commit."
-          git push --set-upstream origin "$BRANCH" || echo "Branch push skipped (maybe no changes)."
-
-      - name: Open PR with rendered posts
-        uses: actions/github-script@v7
+      - name: Commit & open PR with rendered posts
+        uses: peter-evans/create-pull-request@v6
         with:
-          script: |
-            const runId = process.env.GITHUB_RUN_ID;
-            const branch = `automation/gumroad-social-${runId}`;
-            const { repo, owner } = context.repo;
-            const title = `Rendered social copy from Gumroad Sync (${runId})`;
-            const body = [
-              "This PR adds ready-to-paste pinned posts:",
-              "- `rendered_social/x_pin.txt`",
-              "- `rendered_social/linkedin_pin.txt`",
-              "",
-              "Review the links and pin them on X & LinkedIn."
-            ].join("\\n");
-            try {
-              await github.rest.pulls.create({ owner, repo, title, head: branch, base: "main", body });
-            } catch (e) {
-              core.warning(`PR creation skipped: ${e.message}`);
-            }
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: add rendered social copy from sync run ${{ github.run_id }}"
+          branch: automation/gumroad-social-${{ github.run_id }}
+          title: "Rendered social copy from Gumroad Sync (${{ github.run_id }})"
+          body: |
+            This PR adds ready-to-paste pinned posts:
+            - `rendered_social/x_pin.txt`
+            - `rendered_social/linkedin_pin.txt`
+
+            Review the links and pin them on X & LinkedIn.
+          add-paths: |
+            rendered_social/**
