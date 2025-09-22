@@ -346,3 +346,7 @@ This project uses open source software. All dependencies maintain their respecti
 
 
 
+
+## Services
+- **Ship-Safe Repo™** — CI + Pre-Commit + AI Review in 24 hours. See [offer PDF](docs/Ship-Safe-Repo_Offer_APlus_Enterprise.pdf).
+
