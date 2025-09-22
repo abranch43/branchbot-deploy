@@ -5,9 +5,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'config/gumroad.config.yaml'
-      - 'agents/gumroad_sync.py'
-      - 'scripts/social_post_out.py'
+      - 'ops/gumroad-agent/config/gumroad.config.yaml'
+      - 'ops/gumroad-agent/agents/gumroad_sync.py'
+      - 'ops/gumroad-agent/scripts/social_post_out.py'
+
 
 permissions:
   contents: write
