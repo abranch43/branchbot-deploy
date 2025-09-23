@@ -68,5 +68,5 @@ social:
       ☎️ $99 Discovery (credited) → {PAY_LINK}
       UEI H8QRGM6ENBM6 • CAGE 0EKQ7
   ctas:
-    pay_link: "https://www.paypal.com/pay/YOUR-DISCOVERY-LINK"   # replace later
+    pay_link: "https://paypal.me/your-link-temp-1"   # replace later
     gumroad_bundle_url: "https://YOUR-GUMROAD-USER.gumroad.com/l/branchbot-starter-kit"  # replace after first sync
