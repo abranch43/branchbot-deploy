@@ -109,6 +109,8 @@ function runAction(name, args) {
       days = 14;
     }
     backfill(days);
+  } else if (action === 'runWorkflow') {
+    runAll();
   } else if (action === 'dailyTrigger') {
     createDailyBackfillTrigger();
   } else if (action === 'deleteTriggers') {

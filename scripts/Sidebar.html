@@ -24,12 +24,38 @@
         padding: 16px 20px 8px;
         border-bottom: 1px solid #e3e8ef;
         background: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
       header h1 {
         margin: 0;
         font-size: 18px;
         font-weight: 600;
+      }
+
+      .header-button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #3d8bfd;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+      }
+
+      .header-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.12);
+      }
+
+      .header-button:disabled {
+        cursor: wait;
+        opacity: 0.6;
+        box-shadow: none;
       }
 
       main {
@@ -178,6 +204,7 @@
   <body>
     <header>
       <h1>A+ Workspace Setup</h1>
+      <button id="runWorkflowBtn" class="header-button">Run workflow</button>
     </header>
     <main>
       <section aria-labelledby="config-heading">
@@ -297,6 +324,9 @@
 
         document.getElementById('saveConfigBtn').addEventListener('click', function () {
           persistConfig();
+        });
+        document.getElementById('runWorkflowBtn').addEventListener('click', function () {
+          runAction('runWorkflow', null, 'Workspace provisioning workflow completed.');
         });
         document.getElementById('runSetupBtn').addEventListener('click', function () {
           runAction('setup', null, 'Workspace setup completed.');
