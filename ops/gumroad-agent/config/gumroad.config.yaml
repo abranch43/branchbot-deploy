@@ -1,0 +1,72 @@
+storefront:
+  affiliates:
+    enabled: true
+    default_percent: 25
+
+discounts:
+  - code: "LEGACY20"
+    percent_off: 20
+    active: true
+
+products:
+  - kind: "product"
+    handle: "smart-invoice-generator"
+    title: "Smart Invoice Generator"
+    price_cents: 2700
+    published: true
+    description_md: |
+      Send pro invoices in 2 minutes.
+      Net-7/Net-30 terms + ACH instructions built in.
+      PDF export. Client-ready.
+
+  - kind: "product"
+    handle: "branchbot-codex-toolkit"
+    title: "BranchBot Codex Toolkit"
+    price_cents: 9400
+    published: true
+    description_md: |
+      Templates, checklists, and core BranchBot ops documents.
+      Built for veteran-led contracting and automation.
+
+  - kind: "product"
+    handle: "automation-audit-call"
+    title: "Automation Audit Call (Credited)"
+    price_cents: 9900
+    published: true
+    description_md: |
+      Outcome in 45 minutes: your 3-step plan + 2 ready-to-ship assets.
+      The $99 is credited to any service/retainer.
+    constraints:
+      limit_one_per_customer: true
+
+  - kind: "bundle"
+    handle: "branchbot-starter-kit"
+    title: "BranchBot Starter Kit (Bundle)"
+    price_cents: 11900
+    published: true
+    includes_handles:
+      - "branchbot-codex-toolkit"
+      - "smart-invoice-generator"
+    description_md: |
+      Built for veterans and builders.
+      Includes:
+      • BranchBot Codex Toolkit
+      • Smart Invoice Generator
+      Bonus: $25 credit toward an Automation Audit Call.
+
+social:
+  linkedin:
+    pin_post: |
+      I help teams stand up SDVOSB-grade automation & compliance without the chaos.
+      • BranchBot Starter Kit (templates + invoicing) → {GUMROAD_BUNDLE_URL}
+      • $99 Discovery (credited) → {PAY_LINK}
+      Veteran-owned. Agentic-powered. Built for legacy.
+  x:
+    pin_post: |
+      Veteran-owned. Agentic-powered.
+      🧰 Starter Kit → {GUMROAD_BUNDLE_URL}
+      ☎️ $99 Discovery (credited) → {PAY_LINK}
+      UEI H8QRGM6ENBM6 • CAGE 0EKQ7
+  ctas:
+    pay_link: "https://www.paypal.com/pay/YOUR-DISCOVERY-LINK"   # replace later
+    gumroad_bundle_url: "https://YOUR-GUMROAD-USER.gumroad.com/l/branchbot-starter-kit"  # replace after first sync

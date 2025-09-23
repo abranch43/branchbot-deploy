@@ -1,10 +1,6 @@
 name: Gumroad Sync + Social PR (v3.1)
 
 on:
-  workflow_dispatch:   # manual only
-
-
-on:
   workflow_dispatch:
   push:
     paths:
@@ -49,15 +45,15 @@ jobs:
           set -euo pipefail
           python ops/gumroad-agent/scripts/social_post_out.py || true
           mkdir -p rendered_social
-          # Ensure files exist even if script short-circuited; use single-quoted heredocs to avoid $ expansion
-          [ -f rendered_social/x_pin.txt ] || cat <<'EOF' > rendered_social/x_pin.txt
-Starter Kit → {GUMROAD_BUNDLE_URL}
-$99 Discovery → {PAY_LINK}
-EOF
-          [ -f rendered_social/linkedin_pin.txt ] || cat <<'EOF' > rendered_social/linkedin_pin.txt
-Starter Kit → {GUMROAD_BUNDLE_URL}
-$99 Discovery → {PAY_LINK}
-EOF
+          # Ensure files exist even if script short-circuited
+          if [ ! -f rendered_social/x_pin.txt ]; then
+            echo "Starter Kit → {GUMROAD_BUNDLE_URL}" > rendered_social/x_pin.txt
+            echo "$99 Discovery → {PAY_LINK}" >> rendered_social/x_pin.txt
+          fi
+          if [ ! -f rendered_social/linkedin_pin.txt ]; then
+            echo "Starter Kit → {GUMROAD_BUNDLE_URL}" > rendered_social/linkedin_pin.txt
+            echo "$99 Discovery → {PAY_LINK}" >> rendered_social/linkedin_pin.txt
+          fi
           ls -la rendered_social
 
       - name: Commit & open PR with rendered posts
