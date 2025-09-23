@@ -1,6 +1,10 @@
 name: Gumroad Sync + Social PR (v3.1)
 
 on:
+  workflow_dispatch:   # manual only
+
+
+on:
   workflow_dispatch:
   push:
     paths:
