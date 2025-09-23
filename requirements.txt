@@ -1,7 +1,3 @@
-fastapi
-stripe
-streamlit
-requests
-uvicorn
-python-dotenv
-openai
+pytest
+beautifulsoup4
+lxml

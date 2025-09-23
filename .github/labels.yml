@@ -1,0 +1,27 @@
+- name: contracts
+  color: "1f6feb"
+  description: Contracts Ops lane
+- name: family
+  color: "a371f7"
+  description: Family Tech lane
+- name: funnels
+  color: "9a6700"
+  description: Visibility / Funnels lane
+- name: tests
+  color: "0e8a16"
+  description: Test changes
+- name: ci
+  color: "d93f0b"
+  description: CI / automation
+- name: docs
+  color: "0366d6"
+  description: Documentation changes
+- name: chore
+  color: "6a737d"
+  description: Maintenance / tooling
+- name: feature
+  color: "9be9a8"
+  description: New feature request
+- name: bug
+  color: "d73a4a"
+  description: Bug report / fix
