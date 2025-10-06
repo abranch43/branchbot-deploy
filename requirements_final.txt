@@ -1,5 +1,5 @@
 fastapi==0.110.0
-stripe==7.10.0
+stripe==13.0.1
 streamlit==1.37.0
 requests==2.31.0
 uvicorn==0.30.0
