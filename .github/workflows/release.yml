@@ -1,0 +1,41 @@
+---
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run PowerShell release script if present
+        shell: pwsh
+        run: |
+          if (Test-Path -Path 'scripts/release.ps1') {
+            ./scripts/release.ps1
+          } else {
+            Write-Host 'scripts/release.ps1 not found; skipping build step'
+          }
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: out/release/*.zip
+          if-no-files-found: ignore
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            out/release/*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

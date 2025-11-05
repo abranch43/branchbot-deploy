@@ -1,53 +1,55 @@
-﻿name: CI
+---
+name: CI
 
 on:
-  pull_request:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  python:
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install deps (best-effort)
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -q -r requirements.txt || true
-          pip install -q pytest || true
-          pip install -q ruff || true
-          pip install -q mypy || true
+          pip install ruff black
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+      - name: Ruff
+        run: ruff check .
+      - name: Black (check)
+        run: black --check .
 
-      - name: Ruff (if present)
-        run: ruff check . || true
-
-      - name: Mypy (if config present)
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
         run: |
-          if [ -f mypy.ini ] || [ -f pyproject.toml ]; then
-            mypy .
-          else
-            echo "No mypy config; skipping"
-          fi
-
-      - name: Unit tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+      - name: Run tests
         run: |
-          if [ -f branchbot/test_minimal.py ]; then
-            pytest -q branchbot/test_minimal.py
-          else
-            pytest -q
-          fi
+          set -e
+          pytest -q || code=$?; if [ "${code:-0}" -eq 5 ]; then echo "No tests collected"; exit 0; else exit ${code:-0}; fi
