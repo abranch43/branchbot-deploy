@@ -1,6 +1,35 @@
-﻿[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
+﻿<a href="https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml"><img src="https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg"></a>
+<a href="https://github.com/abranch43/branchbot-deploy/actions/workflows/release.yml"><img src="https://github.com/abranch43/branchbot-deploy/actions/workflows/release.yml/badge.svg"></a>
+<a href="https://github.com/abranch43/branchbot-deploy/actions/workflows/codeql.yml"><img src="https://github.com/abranch43/branchbot-deploy/actions/workflows/codeql.yml/badge.svg"></a>
+<a href="https://github.com/abranch43/branchbot-deploy/network/updates"><img src="https://img.shields.io/badge/Dependabot-enabled-brightgreen?logo=dependabot"></a>
 
 # branchbot-deploy
+
+Operational hardening with CI/CD, automated releases, and security scans.
+
+## Required secrets (Actions)
+Add these in Repository Settings → Secrets and variables → Actions:
+- NOTION_DATABASE_ID
+- STRIPE_WEBHOOK_SECRET
+- GUMROAD_WEBHOOK_SECRET
+- OPENAI_API_KEY (optional)
+- SAFE_MODE (true)
+- Any others referenced in .env.example
+
+These are consumed by workflows and runtime scripts via `secrets.*`. Do not commit plaintext secrets.
+
+## Workflows
+- CI: Lint (ruff/black) and run tests (pytest) on pushes/PRs
+- Release: On tags `v*`, runs `scripts/release.ps1`, attaches `out/release/*.zip`, and publishes a GitHub Release
+- CodeQL: Python/JavaScript security analysis, nightly at 02:00 UTC
+- branchbot-weekly: Scheduled maintenance/jobs on Mondays 12:00 UTC
+
+## Releasing
+1) Merge to main with green checks
+2) Create annotated tag, e.g. `v0.1.0`
+3) Push tag; the release workflow generates notes and uploads artifacts if present
+
+---
 
 [![Build Status](https://github.com/abranch43/branchbot-deploy/workflows/Quality%20Gates/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
