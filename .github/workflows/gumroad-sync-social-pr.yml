@@ -1,4 +1,4 @@
-﻿name: Gumroad Sync + Social PR (v3.2)
+name: Gumroad Sync + Social PR (v3.2)
 
 on:
   workflow_dispatch: {}   # manual only
@@ -46,14 +46,14 @@ jobs:
           [ -f rendered_social/linkedin_pin.txt ] && cp rendered_social/linkedin_pin.txt .auto/social/linkedin_pin.txt || true
           # ensure files if script short-circuited (single-quoted heredocs avoid $ expansion)
           [ -f .auto/social/x_pin.txt ] || cat <<'EOF' > .auto/social/x_pin.txt
-Starter Kit → {GUMROAD_BUNDLE_URL}
-$99 Discovery → {PAY_LINK}
-EOF
+          Starter Kit → {GUMROAD_BUNDLE_URL}
+          $99 Discovery → {PAY_LINK}
+          EOF
           [ -f .auto/social/linkedin_pin.txt ] || cat <<'EOF' > .auto/social/linkedin_pin.txt
-I help teams stand up SDVOSB-grade automation & compliance without the chaos.
-Starter Kit → {GUMROAD_BUNDLE_URL}
-$99 Discovery → {PAY_LINK}
-EOF
+          I help teams stand up SDVOSB-grade automation & compliance without the chaos.
+          Starter Kit → {GUMROAD_BUNDLE_URL}
+          $99 Discovery → {PAY_LINK}
+          EOF
           # always create a tiny change so a PR is opened
           date -u +"%Y-%m-%dT%H:%M:%SZ" > .auto/social/.build_stamp
           ls -la .auto/social
