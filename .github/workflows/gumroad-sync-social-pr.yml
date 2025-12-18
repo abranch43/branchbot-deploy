@@ -52,7 +52,7 @@ jobs:
           ls -la .auto/social
 
       - name: Commit & open PR with rendered posts
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: add rendered social copy from sync run ${{ github.run_id }}"
