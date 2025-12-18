@@ -1,4 +1,4 @@
-﻿[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
+[![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
 
 # branchbot-deploy
 
