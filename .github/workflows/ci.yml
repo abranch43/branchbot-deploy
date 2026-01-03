@@ -30,6 +30,10 @@ jobs:
           pip install -q pytest || true
           pip install -q ruff || true
           pip install -q mypy || true
+          pip install -q pre-commit || true
+
+      - name: Pre-commit (format/encoding)
+        run: pre-commit run --all-files --show-diff-on-failure
 
       - name: Ruff (if present)
         run: ruff check . || true
