@@ -1,0 +1,196 @@
+Branchberg Revenue Command Center — Ship-Safe Repo + Real-Time Console
+
+Your revenue is scattered across Stripe, Gumroad, offline contracts, and manual spreadsheets. You're flying blind until month-end when accounting finally reconciles everything. What if you could see every dollar the moment it hits—no matter the source—and get instant alerts when something looks off?
+
+The Branchberg Revenue Command Center is your unified revenue ledger for the modern business. It's a ready-to-deploy FastAPI backend + Streamlit dashboard that listens to Stripe and Gumroad webhooks, stores every transaction in a PostgreSQL database, and gives you a live command center where totals refresh every 10 seconds.
+
+This isn't just another analytics tool. It's a complete, production-ready repository built for founders, fractional CFOs, and enterprise operators who need ship-safe code they can trust on day one.
+
+
+✅ What's Included
+
+Ship-Safe FastAPI Backend
+• Webhook endpoints for Stripe + Gumroad with cryptographic signature verification
+• Manual revenue ingestion API for offline contracts and POs
+• Idempotent event processing (prevents duplicate recording on webhook retries)
+• Built-in input validation and sanitization for security
+• Health check endpoint for monitoring
+• SAFE_MODE flag to disable risky integrations in production
+• Comprehensive error handling and logging
+
+Streamlit Real-Time Console
+• Auto-refreshing dashboard (updates every 10 seconds)
+• Today / This Week / All-Time revenue totals
+• Live event feed with timestamps, amounts, and sources
+• Clean, professional UI that works out of the box
+• Responsive design for desktop and mobile
+
+Railway-Provisioned PostgreSQL Backing Store
+• Automatically provisioned database with managed backups
+• Three tables: revenue_events, revenue_summaries, revenue_alerts
+• Optimized indexes for fast queries
+• Full schema documentation in AGENTS.md
+• Migration scripts ready to run
+
+Complete Repository Contents
+• `/api` — FastAPI backend with webhook handlers
+• `/dashboard` — Streamlit dashboard with real-time refresh
+• `/database` — PostgreSQL schema and migrations
+• `README.md` — Step-by-step deployment guide
+• `AGENTS.md` — Full agent specification with database schema
+• `requirements.txt` — All Python dependencies pinned
+• `railway.json` — One-click Railway deploy configuration
+• `.env.example` — Environment variable template
+
+Security & CI Built In
+• GitHub Actions CI/CD with automated testing
+• Pre-commit hooks for code quality
+• Bandit security scanner integration
+• No secrets in code (all via environment variables)
+• Input validation on all endpoints
+• Webhook signature verification (Stripe + Gumroad)
+• HTTPS/SSL enforced by default on Railway
+
+Deployment Guide
+• Railway one-click deploy button (2 minutes to live)
+• Exact webhook configuration steps for Stripe and Gumroad
+• Environment variable checklist (required + optional)
+• Test commands to verify your setup
+• Local development instructions if you want to iterate
+
+Example Webhook Test Commands
+• Stripe CLI test: `stripe trigger checkout.session.completed`
+• Gumroad test: curl command with HMAC signature example
+• Manual entry endpoint: authenticated POST with JSON payload
+
+
+🎯 Perfect For
+
+• **SaaS Founders**: Track Stripe subscriptions + Gumroad one-time sales in one place
+• **Fractional CFOs**: Give clients a live revenue dashboard they can check anytime
+• **Enterprise Ops**: Monitor revenue across multiple entities (A+ Enterprise LLC, Legacy Unchained Inc, etc.)
+• **Finance Teams**: Replace manual spreadsheets with automated, auditable ledger
+• **Startup Operators**: See today's revenue before you finish your morning coffee
+
+
+🚀 What You Get (The Complete Package)
+
+1. **Full GitHub Repository** with MIT license
+   • Fork it, customize it, make it yours
+   • All code is readable, documented, and follows Python best practices (PEP 8, type hints)
+
+2. **Database Schema** (PostgreSQL)
+   • `revenue_events` — Every transaction with provider, amount, customer, metadata
+   • `revenue_summaries` — Daily/weekly/monthly rollups
+   • `revenue_alerts` — Anomaly detection and threshold notifications
+
+3. **Environment Config Template** (`.env.example`)
+   • STRIPE_WEBHOOK_SECRET (required)
+   • GUMROAD_WEBHOOK_SECRET (required)
+   • DATABASE_URL (auto-set by Railway)
+   • SAFE_MODE=true (recommended for production)
+   • SLACK_WEBHOOK_URL (optional, for daily summaries)
+   • OPENAI_API_KEY (optional, for AI-powered insights)
+
+4. **Security Notes**
+   • Webhook signature verification on every request
+   • Input validation and sanitization
+   • Environment encryption (Railway handles this)
+   • No secrets in code, ever
+   • HTTPS/SSL enforced by default
+
+5. **Deployment Guide** (Step-by-Step)
+   • Click "Deploy on Railway" button
+   • Set 2 required environment variables (webhook secrets)
+   • Wait 60 seconds for services to turn green
+   • Copy your API public domain
+   • Configure webhooks in Stripe and Gumroad dashboards
+   • Open your dashboard URL and watch revenue roll in
+
+6. **Test Commands** (Verify Your Setup)
+   • Stripe: `stripe listen --forward-to <YOUR-API>/webhooks/stripe`
+   • Gumroad: Example curl command with signature generation
+   • Manual entry: POST to `/api/manual-revenue` with JSON payload
+
+
+🛠️ What You Need to Bring
+
+• **Stripe Account** (free to create, provides webhook secret)
+• **Gumroad Account** (if you sell on Gumroad, provides webhook secret)
+• **Railway Account** (free tier works, but production needs paid plan for uptime)
+• **Webhook Secrets** (copy from Stripe/Gumroad dashboards after deploy)
+
+That's it. No other dependencies, no hidden fees, no complex setup.
+
+
+📦 File Structure (What You're Downloading)
+
+```
+branchbot-deploy/
+├── api/
+│   ├── main.py              # FastAPI app entrypoint
+│   ├── webhooks.py          # Stripe + Gumroad webhook handlers
+│   ├── models.py            # Database models
+│   └── utils.py             # Signature verification, validation
+├── dashboard/
+│   └── main.py              # Streamlit dashboard
+├── database/
+│   ├── schema.sql           # PostgreSQL schema
+│   └── migrations/          # Alembic migrations
+├── jobs/
+│   └── daily_summary.py     # Scheduled job for 06:00 Central
+├── README.md                # Full deployment guide
+├── AGENTS.md                # Revenue Tracking Agent specification
+├── requirements.txt         # Python dependencies
+├── railway.json             # Railway config (one-click deploy)
+├── .env.example             # Environment variable template
+└── Procfile                 # Railway service definitions
+```
+
+
+⚡ The Promise
+
+You can have a live revenue command center in under a day. Not "eventually." Not "after you figure out the database." Today.
+
+• Deploy in 2 minutes with Railway's one-click button
+• Configure webhooks in 5 minutes (Stripe + Gumroad dashboards)
+• Watch your first transaction land in real-time
+
+From scattered spreadsheets to unified command center. From month-end surprises to minute-by-minute clarity. From "I think we're doing okay" to "Here's exactly where we are."
+
+This is the Revenue Command Center you've been meaning to build. But it's already built. Just deploy it.
+
+
+🔒 Security & Compliance
+
+• Webhook signature verification (cryptographic validation on every request)
+• Input sanitization (prevents SQL injection, XSS)
+• Environment encryption (Railway stores secrets encrypted at rest)
+• HTTPS/SSL (enforced by default, no HTTP allowed)
+• Audit trail (every revenue event is logged with timestamp)
+• SAFE_MODE flag (disables risky integrations in production)
+• Regular dependency updates via Dependabot
+• GitHub Actions security scanning (Bandit + CodeQL)
+
+
+💼 Business Context
+
+Built by Antonio Branch for A+ Enterprise LLC and Legacy Unchained Inc as part of the Empire OS financial infrastructure. Used in production to track revenue across multiple entities, payment providers, and contract types. Now available for your business.
+
+This is the same system that powers real-time financial insights for government contractors, SaaS operators, and multi-entity businesses. It's battle-tested, production-ready, and designed for enterprises that can't afford revenue blind spots.
+
+
+📞 Questions?
+
+• **Email**: antonio.branch31@gmail.com
+• **GitHub Issues**: https://github.com/abranch43/branchbot-deploy/issues
+• **Documentation**: Full API docs at `/docs` endpoint after deployment
+
+This is not a course. This is not a template. This is a complete, working system. Clone it, deploy it, and start tracking revenue today.
+
+
+---
+
+License: MIT (commercial use allowed)
+Support: Community support via GitHub Issues, priority support available for enterprises
+Updates: Maintained actively, security patches pushed regularly

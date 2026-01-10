@@ -350,3 +350,18 @@ This project uses open source software. All dependencies maintain their respecti
 ## Services
 - **Ship-Safe Repo™** — CI + Pre-Commit + AI Review in 24 hours. See [offer PDF](docs/Ship-Safe-Repo_Offer_APlus_Enterprise.pdf).
 
+---
+
+## Empire OS Brief
+
+The **Empire OS Brief** is a strategic document outlining the vision for modern financial infrastructure for government contractors and enterprise operators. It provides context on:
+
+- The problem: scattered revenue, blind spots, and month-end surprises
+- The solution: unified ledger, real-time insights, and automated alerts
+- The approach: ship-safe repositories, Railway deployment, and production-grade security
+- Business context: SDVOSB/MBE certifications, federal compliance, and modern DevOps
+
+**Note:** The Empire OS Brief PDF is maintained as an external asset and is not tracked in this repository. It is available upon request or as an attachment in campaign materials. See `EMAIL_CAMPAIGN.md` for distribution details.
+
+ 
+ 
