@@ -7,3 +7,8 @@ __pycache__/
 
 # GitHub workflow artifacts
 rendered_social/
+
+# Python bytecode / caches
+*.pyc
+*.pyo
+*.pyd
