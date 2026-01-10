@@ -15,3 +15,9 @@ rendered_social/
 
 # Local / generated data
 data/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+test_*.db
