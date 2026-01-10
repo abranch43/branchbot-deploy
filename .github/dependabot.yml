@@ -10,3 +10,10 @@ updates:
     labels:
       - "dependencies"
       - "python"
+    groups:
+      python-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
