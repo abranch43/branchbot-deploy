@@ -12,3 +12,6 @@ rendered_social/
 *.pyc
 *.pyo
 *.pyd
+
+# Local / generated data
+data/
