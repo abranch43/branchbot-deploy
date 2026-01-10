@@ -2,6 +2,8 @@
 
 ## Codex Guide
 ### Purpose
+# AGENTS.md — Codex Guide
+## Purpose
 - Code review focus: security, error handling, env/secret hygiene, performance.
 - Project areas: /branchbot, /api, deployment (Railway), tests in /branchbot/tests.
 
@@ -11,7 +13,7 @@
 - ruff, mypy (if present)
 - railway logs (read-only)
 
----
+
 
 ## Revenue Tracking Agent
 
