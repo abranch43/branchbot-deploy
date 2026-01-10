@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 from io import StringIO
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +15,15 @@ import pandas as pd
 
 from .database import init_db, get_db, RevenueEvent
 
-app = FastAPI(title="BranchOS Revenue API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database on startup."""
+    init_db()
+    yield
+
+
+app = FastAPI(title="BranchOS Revenue API", lifespan=lifespan)
 
 # CORS middleware for Streamlit
 app.add_middleware(
@@ -24,11 +33,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize database on startup
-@app.on_event("startup")
-def startup_event():
-    init_db()
 
 
 # Pydantic models
@@ -40,15 +44,6 @@ class ManualTransaction(BaseModel):
     customer_id: Optional[str] = Field(None, description="Customer ID")
     entity: Optional[str] = Field(None, description="Business entity")
     description: Optional[str] = Field(None, description="Transaction description")
-
-
-class CSVMapping(BaseModel):
-    """CSV column mapping configuration."""
-    amount_column: str = Field(..., description="Column name for amount")
-    currency_column: Optional[str] = Field(None, description="Column name for currency")
-    email_column: Optional[str] = Field(None, description="Column name for email")
-    entity_column: Optional[str] = Field(None, description="Column name for entity")
-    description_column: Optional[str] = Field(None, description="Column name for description")
 
 
 class RevenueEventResponse(BaseModel):

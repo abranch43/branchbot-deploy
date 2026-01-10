@@ -2,10 +2,9 @@
 import os
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, JSON, Enum as SQLEnum
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import enum
 
 # Get DATABASE_URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./branchbot.db")
@@ -23,13 +22,6 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-
-class ProviderEnum(str, enum.Enum):
-    """Revenue provider types."""
-    stripe = "stripe"
-    gumroad = "gumroad"
-    manual = "manual"
 
 
 class RevenueEvent(Base):

@@ -1,15 +1,9 @@
 """Tests for Universal Income Ingest API endpoints."""
 import os
-import sys
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-# Ensure the project root is in the path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 from branchberg.app.main import app
 from branchberg.app.database import Base, get_db
