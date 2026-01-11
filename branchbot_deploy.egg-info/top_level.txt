@@ -1,5 +1,0 @@
-apps
-branchberg
-branchbot
-jobs
-ops
