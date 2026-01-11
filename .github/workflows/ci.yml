@@ -5,11 +5,18 @@ on:
   push:
     branches: [ main ]
 
+env:
+  PYTHONUTF8: "1"
+  LC_ALL: "C.UTF-8"
+  LANG: "C.UTF-8"
+
 jobs:
   python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -47,7 +54,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           if [ -f branchbot/test_minimal.py ]; then
-            pytest -q branchbot/test_minimal.py
+            python -X utf8 -m pytest -q branchbot/test_minimal.py
           else
-            pytest -q
+            python -X utf8 -m pytest -q
           fi
