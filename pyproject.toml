@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "branchbot-deploy"
+version = "0.1.0"
+description = "One-Click Deploy Revenue Tracker - Enterprise-grade API + Dashboard + PostgreSQL setup"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Antonio Branch", email = "antonio.branch31@gmail.com"}
+]
+keywords = ["revenue-tracking", "webhook", "stripe", "gumroad", "fastapi", "streamlit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+    "openai>=2.14",
+    "stripe>=7.0",
+    "streamlit>=1.33",
+    "reportlab>=4.0.0",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "pandas>=2.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.6.0",
+    "mypy>=1.0",
+    "types-requests",
+    "types-reportlab",
+]
+
+[project.urls]
+Homepage = "https://github.com/abranch43/branchbot-deploy"
+Repository = "https://github.com/abranch43/branchbot-deploy"
+Issues = "https://github.com/abranch43/branchbot-deploy/issues"
+
+[tool.setuptools]
+packages = ["branchberg", "branchberg.app", "branchberg.dashboard", "branchbot", "apps", "apps.common", "apps.contracts", "apps.contracts.layouts"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q -ra"
+testpaths = ["branchbot", "tests"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = [
+    "^tests/",
+    "^\\.venv/",
+    "^build/",
+    "^dist/",
+]
+
+# Prevent treating tests as a namespace package
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Unused imports in __init__.py

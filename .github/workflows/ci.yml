@@ -19,26 +19,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install deps (best-effort)
+      - name: Install package with dev dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -q -r requirements.txt || true
-          pip install -q pytest || true
-          pip install -q ruff || true
-          pip install -q mypy || true
+          pip install -e .[dev]
 
       - name: Ruff (if present)
-        env:
-          PYTHONPATH: ${{ github.workspace }}
         run: ruff check . || true
 
       - name: Mypy (if config present)
-        env:
-          PYTHONPATH: ${{ github.workspace }}
         run: |
           if [ -f mypy.ini ] || [ -f pyproject.toml ]; then
             mypy .
@@ -47,8 +40,6 @@ jobs:
           fi
 
       - name: Unit tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
         run: |
           if [ -f branchbot/test_minimal.py ]; then
             pytest -q branchbot/test_minimal.py
