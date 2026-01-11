@@ -180,46 +180,92 @@ branchbot-deploy/
 
 ## 🧑‍💻 Local Development (Optional)
 
-1. **Clone Repo:**
+### Quick Start
+
+1. **Clone & Setup:**
    ```bash
    git clone https://github.com/abranch43/branchbot-deploy.git
    cd branchbot-deploy
+   python -m venv .venv
    ```
 
-2. **Install Dependencies:**
+2. **Activate Virtual Environment:**
+   
+   **Windows (PowerShell):**
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+   
+   **Windows (Command Prompt):**
+   ```cmd
+   .venv\Scripts\activate.bat
+   ```
+   
+   **macOS/Linux:**
+   ```bash
+   source .venv/bin/activate
+   ```
+
+3. **Install Dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run API Locally (auto-detect entrypoint):**
-   ```bash
-   python - <<'PY'
-import importlib, uvicorn
-for mod in ("api.main", "branchberg.app.main"):
-    try:
-        uvicorn.run(importlib.import_module(mod).app, reload=True)
-        break
-    except Exception:
-        pass
-else:
-    print("No API entrypoint found.")
-PY
-   ```
-
-4. **Run Dashboard Locally:**
-   ```bash
-   streamlit run dashboard/main.py
-   ```
-
-5. **Set Local Environment Variables:**
-   - Create a `.env` file, add your secrets:
+4. **Configure Environment (Optional):**
+   - Copy `.env.example` to `.env` (already gitignored)
+   - Add your secrets if testing webhooks:
      ```
      STRIPE_WEBHOOK_SECRET=your_stripe_secret
      GUMROAD_WEBHOOK_SECRET=your_gumroad_secret
      OPENAI_API_KEY=your_openai_key  # (optional)
      SLACK_WEBHOOK_URL=your_slack_url  # (optional)
      ```
-6. **Imports failing?** Set `PYTHONPATH=.` before running scripts.
+
+### Running the Services
+
+#### Option 1: Automated Start (Windows PowerShell)
+```powershell
+.\scripts\run-local.ps1
+```
+This script will:
+- Activate the virtual environment
+- Start the API on `http://localhost:8000`
+- Start the dashboard on `http://localhost:8502`
+
+#### Option 2: Manual Start
+
+**Terminal 1 - API Backend:**
+```bash
+uvicorn branchberg.app.main:app --reload --port 8000
+```
+API will be available at: `http://localhost:8000`  
+API docs: `http://localhost:8000/docs`
+
+**Terminal 2 - Streamlit Dashboard:**
+```bash
+streamlit run branchberg/dashboard/streamlit_app.py --server.port 8502
+```
+Dashboard will be available at: `http://localhost:8502`
+
+### Testing the API
+
+Once running, test the API health:
+```bash
+curl http://localhost:8000/
+```
+
+Add a manual transaction:
+```bash
+curl -X POST http://localhost:8000/ingest/manual \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 100.50, "currency": "USD", "description": "Test transaction"}'
+```
+
+### Troubleshooting
+
+- **Imports failing?** Set `PYTHONPATH=.` before running scripts.
+- **Port already in use?** Change ports with `--port` (uvicorn) or `--server.port` (streamlit)
+- **API not connecting?** Ensure `API_URL=http://localhost:8000` is set for the dashboard
 
 ---
 
