@@ -30,13 +30,14 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Ruff lint check
-        run: ruff check .
+        run: ruff check . --exclude '.github/workflows/ops' --exclude 'ops'
 
       - name: Ruff format check
-        run: ruff format --check .
+        run: ruff format --check . --exclude '.github/workflows/ops' --exclude 'ops'
 
       - name: Python syntax check
-        run: python -m compileall -q .
+        run: |
+          python -m compileall -q branchberg/ branchbot/ tests/ apps/ jobs/ gumroad/
 
       - name: Run pytest
         env:

@@ -207,9 +207,16 @@ branchbot-deploy/
    ```
 
 3. **Install Dependencies:**
+
+   **Using pip:**
    ```bash
    pip install -r requirements.txt
    pip install -r requirements-dev.txt  # For development tools
+   ```
+
+   **Using make:**
+   ```bash
+   make install-dev  # Installs both prod and dev dependencies + pre-commit hooks
    ```
 
 4. **Set up pre-commit hooks (recommended):**
@@ -217,6 +224,7 @@ branchbot-deploy/
    pre-commit install
    ```
    This will automatically run linting, formatting, and security checks before each commit.
+   (Already done if you used `make install-dev`)
 
 5. **Configure Environment (Optional):**
    - Copy `.env.example` to `.env` (already gitignored)
@@ -296,13 +304,53 @@ curl -X POST http://localhost:8000/ingest/manual \
 
 ### Development Workflow
 
+#### Quick Commands with Make
+
+For convenience, common development tasks can be run using `make`:
+
+```bash
+# Show all available commands
+make help
+
+# Install dependencies and setup pre-commit
+make install-dev
+
+# Run tests
+make test
+
+# Lint code
+make lint
+
+# Format code
+make format
+
+# Check formatting
+make format-check
+
+# Run pre-commit hooks
+make pre-commit
+
+# Clean temporary files
+make clean
+
+# Start API only
+make api
+
+# Start dashboard only
+make dashboard
+```
+
 #### Running Tests
 ```bash
 # Run all tests
 pytest
+# or
+make test
 
 # Run specific test file
 pytest branchbot/test_minimal.py
+# or
+make test-minimal
 
 # Run with coverage
 pytest --cov=branchberg --cov=branchbot
@@ -312,15 +360,24 @@ pytest --cov=branchberg --cov=branchbot
 ```bash
 # Check code with ruff
 ruff check .
+# or
+make lint
 
 # Auto-fix issues
 ruff check --fix .
 
 # Format code
 ruff format .
+# or
+make format
+
+# Check formatting
+make format-check
 
 # Check syntax
 python -m compileall -q .
+# or
+make syntax-check
 ```
 
 #### Pre-commit Hooks
