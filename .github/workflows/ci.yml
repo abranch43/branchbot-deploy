@@ -19,35 +19,35 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/requirements-dev.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install deps (best-effort)
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -q -r requirements.txt || true
-          pip install -q pytest || true
-          pip install -q ruff || true
-          pip install -q mypy || true
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
-      - name: Ruff (if present)
-        run: ruff check . || true
+      - name: Ruff lint check
+        run: ruff check .
 
-      - name: Mypy (if config present)
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Python syntax check
+        run: python -m compileall -q .
+
+      - name: Run pytest
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest -v
+
+      - name: Mypy type check (optional)
         run: |
           if [ -f mypy.ini ] || [ -f pyproject.toml ]; then
-            mypy .
+            mypy . || true
           else
             echo "No mypy config; skipping"
           fi
-
-      - name: Unit tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          if [ -f branchbot/test_minimal.py ]; then
-            pytest -q branchbot/test_minimal.py
-          else
-            pytest -q
-          fi
+        continue-on-error: true

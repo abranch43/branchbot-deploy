@@ -1,5 +1,6 @@
 """FastAPI backend with Stripe & Gumroad webhooks and Universal Income Ingest."""
 import os
+import sys
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -96,8 +97,25 @@ class RevenueSummary(BaseModel):
 # Endpoints
 @app.get("/")
 def read_root():
-    """Health check endpoint."""
+    """Root endpoint."""
     return {"status": "ok", "service": "BranchOS Revenue API"}
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    return {"status": "ok", "service": "BranchOS Revenue API", "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.get("/version")
+def version_info():
+    """Version information endpoint."""
+    return {
+        "version": "1.0.0",
+        "service": "BranchOS Revenue API",
+        "python_version": sys.version.split()[0],
+        "environment": os.getenv("RAILWAY_ENVIRONMENT", "development")
+    }
 
 
 @app.post("/ingest/manual", response_model=RevenueEventResponse)
