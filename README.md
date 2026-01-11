@@ -206,9 +206,18 @@ branchbot-deploy/
    source .venv/bin/activate
    ```
 
-3. **Install Dependencies:**
+3. **Install Package and Dependencies:**
+   
+   The repository is now installable as a Python package. Install it in editable mode with all dependencies:
+   
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
+   ```
+   
+   Or install with development tools (pytest, ruff, mypy):
+   
+   ```bash
+   pip install -e ".[dev]"
    ```
 
 4. **Configure Environment (Optional):**
@@ -239,7 +248,8 @@ This script will:
 uvicorn branchberg.app.main:app --reload --port 8000
 ```
 API will be available at: `http://localhost:8000`  
-API docs: `http://localhost:8000/docs`
+API docs: `http://localhost:8000/docs`  
+Health check: `http://localhost:8000/health`
 
 **Terminal 2 - Streamlit Dashboard:**
 ```bash
@@ -247,9 +257,43 @@ streamlit run branchberg/dashboard/streamlit_app.py --server.port 8502
 ```
 Dashboard will be available at: `http://localhost:8502`
 
+### Running Tests
+
+Run all tests:
+```bash
+pytest
+```
+
+Run specific test file:
+```bash
+pytest tests/branchberg/test_health.py
+```
+
+Run with coverage:
+```bash
+pytest --cov=branchberg --cov=branchbot
+```
+
+### Code Quality Tools
+
+Run linter:
+```bash
+ruff check .
+```
+
+Run type checker (if configured):
+```bash
+mypy .
+```
+
 ### Testing the API
 
 Once running, test the API health:
+```bash
+curl http://localhost:8000/health
+```
+
+Test the root endpoint:
 ```bash
 curl http://localhost:8000/
 ```
@@ -263,7 +307,7 @@ curl -X POST http://localhost:8000/ingest/manual \
 
 ### Troubleshooting
 
-- **Imports failing?** Set `PYTHONPATH=.` before running scripts.
+- **Module not found errors?** Ensure you've installed the package with `pip install -e .`
 - **Port already in use?** Change ports with `--port` (uvicorn) or `--server.port` (streamlit)
 - **API not connecting?** Ensure `API_URL=http://localhost:8000` is set for the dashboard
 
@@ -340,8 +384,8 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 ### Quick Start for Contributors
 
 1. **Fork and clone the repository**
-2. **Install dependencies**: `pip install -r requirements.txt`
-3. **Run tests**: `python -m unittest branchbot/test_minimal.py`
+2. **Install package and dependencies**: `pip install -e ".[dev]"`
+3. **Run tests**: `pytest`
 4. **Make your changes following our style guide**
 5. **Submit a pull request**
 

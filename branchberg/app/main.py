@@ -93,11 +93,21 @@ class RevenueSummary(BaseModel):
     currency: str = "USD"
 
 
+# Constants
+HEALTH_RESPONSE = {"status": "ok", "service": "BranchOS Revenue API"}
+
+
 # Endpoints
 @app.get("/")
 def read_root():
-    """Health check endpoint."""
-    return {"status": "ok", "service": "BranchOS Revenue API"}
+    """Root endpoint."""
+    return HEALTH_RESPONSE
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring."""
+    return HEALTH_RESPONSE
 
 
 @app.post("/ingest/manual", response_model=RevenueEventResponse)
