@@ -258,8 +258,11 @@ def get_revenue_summary(db: Session = Depends(get_db)):
 
     # Handle None result and ensure proper types
     if result is not None:
-        total_cents: int = int(result.total_cents) if result.total_cents else 0
-        count: int = int(result.count) if result.count else 0
+        # Use getattr to avoid mypy confusion with built-in count function
+        total_cents_val = result.total_cents
+        count_val = getattr(result, 'count')
+        total_cents: int = int(total_cents_val) if total_cents_val else 0
+        count: int = int(count_val) if count_val else 0
     else:
         total_cents = 0
         count = 0
