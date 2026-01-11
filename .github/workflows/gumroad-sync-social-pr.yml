@@ -28,6 +28,7 @@ jobs:
 
       - name: Run Gumroad Sync (never fail pipeline)
         env:
+          PYTHONPATH: ${{ github.workspace }}
           GUMROAD_ACCESS_TOKEN: ${{ secrets.GUMROAD_ACCESS_TOKEN }}
           GUMROAD_EMAIL: ${{ secrets.GUMROAD_EMAIL }}
           GUMROAD_PASSWORD: ${{ secrets.GUMROAD_PASSWORD }}
@@ -37,6 +38,8 @@ jobs:
 
       # Write artifacts into a non-ignored folder: .auto/social/*
       - name: Render social copy (always succeeds)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           set -euo pipefail
           python ops/gumroad-agent/scripts/social_post_out.py || true
