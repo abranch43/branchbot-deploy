@@ -21,4 +21,3 @@ def test_compliance_pdf_contains_key_text(tmp_path: Path):
     # Text is embedded as plain bytes in content stream
     assert b"MO BUYS Compliance Form" in data
     assert b"Sample Buyer" in data
-

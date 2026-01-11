@@ -1,5 +1,6 @@
 # renders pinned-post text files from your YAML config
-import os, yaml
+import os
+import yaml
 
 CFG = "ops/gumroad-agent/config/gumroad.config.yaml"
 OUT = "rendered_social"
@@ -11,8 +12,13 @@ with open(CFG, "r", encoding="utf-8") as f:
 pay = (cfg.get("social", {}).get("ctas", {}) or {}).get("pay_link", "")
 bundle = (cfg.get("social", {}).get("ctas", {}) or {}).get("gumroad_bundle_url", "")
 
+
 def sub(s: str) -> str:
-    return s.replace("{PAY_LINK}", pay).replace("{GUMROAD_BUNDLE_URL}", bundle).strip() + "\n"
+    return (
+        s.replace("{PAY_LINK}", pay).replace("{GUMROAD_BUNDLE_URL}", bundle).strip()
+        + "\n"
+    )
+
 
 ln = (cfg.get("social", {}).get("linkedin", {}) or {}).get("pin_post", "")
 xx = (cfg.get("social", {}).get("x", {}) or {}).get("pin_post", "")

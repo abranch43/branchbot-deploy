@@ -1,8 +1,8 @@
 """Database configuration and models for BranchOS revenue tracking."""
+
 import os
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, JSON
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -16,8 +16,10 @@ if DATABASE_URL.startswith("postgres://"):
 # Create engine
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
-    pool_pre_ping=True
+    connect_args={"check_same_thread": False}
+    if DATABASE_URL.startswith("sqlite")
+    else {},
+    pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -26,17 +28,22 @@ Base = declarative_base()
 
 class RevenueEvent(Base):
     """Revenue events table - stores all income transactions."""
+
     __tablename__ = "revenue_events"
 
     id = Column(String, primary_key=True)  # UUID as string
     event_id = Column(String, unique=True, nullable=False, index=True)
     provider = Column(String, nullable=False)  # stripe, gumroad, manual
-    event_type = Column(String, nullable=False)  # e.g., charge.succeeded, sale, manual_entry
+    event_type = Column(
+        String, nullable=False
+    )  # e.g., charge.succeeded, sale, manual_entry
     amount_cents = Column(Integer, nullable=False)
     currency = Column(String, default="USD")
     customer_email = Column(String, nullable=True)
     customer_id = Column(String, nullable=True)
-    event_metadata = Column(JSON, default={})  # Renamed from 'metadata' to avoid SQLAlchemy conflict
+    event_metadata = Column(
+        JSON, default={}
+    )  # Renamed from 'metadata' to avoid SQLAlchemy conflict
     created_at = Column(DateTime, default=datetime.utcnow)
     processed_at = Column(DateTime, default=datetime.utcnow)
     entity = Column(String, nullable=True)  # A+ Enterprise LLC or Legacy Unchained Inc

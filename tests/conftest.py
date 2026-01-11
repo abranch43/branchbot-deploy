@@ -1,4 +1,5 @@
 """Pytest configuration for BranchOS tests."""
+
 import sys
 import os
 
