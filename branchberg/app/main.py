@@ -171,10 +171,18 @@ def ingest_csv_transactions(
 
         # Process each row
         created_count = 0
-        errors = []
+        errors: list[str] = []
 
-        for idx, row in df.iterrows():
+        for idx_val, row in df.iterrows():
             try:
+                # Convert index to row number for error messages
+                # iterrows() returns (index, Series) where index can be any hashable
+                if isinstance(idx_val, int):
+                    row_num = idx_val + 1
+                else:
+                    # If index is not int, use the position instead
+                    row_num = created_count + len(errors) + 1
+                
                 # Extract amount (handle both float and string formats)
                 amount_str = str(row[amount_column]).replace("$", "").replace(",", "").strip()
                 amount = float(amount_str)
@@ -208,7 +216,7 @@ def ingest_csv_transactions(
                     currency=currency,
                     customer_email=email,
                     entity=entity,
-                    event_metadata={"description": description, "csv_row": idx + 1} if description else {"csv_row": idx + 1},
+                    event_metadata={"description": description, "csv_row": row_num} if description else {"csv_row": row_num},
                     created_at=datetime.utcnow(),
                     processed_at=datetime.utcnow()
                 )
@@ -217,7 +225,7 @@ def ingest_csv_transactions(
                 created_count += 1
 
             except Exception as e:
-                errors.append(f"Row {idx + 1}: {str(e)}")
+                errors.append(f"Row {row_num}: {str(e)}")
 
         # Commit all transactions
         db.commit()
@@ -248,8 +256,13 @@ def get_revenue_summary(db: Session = Depends(get_db)):
         func.count(RevenueEvent.id).label("count")
     ).first()
 
-    total_cents = result.total_cents if result.total_cents else 0
-    count = result.count if result.count else 0
+    # Handle None result and ensure proper types
+    if result is not None:
+        total_cents: int = int(result.total_cents) if result.total_cents else 0
+        count: int = int(result.count) if result.count else 0
+    else:
+        total_cents = 0
+        count = 0
 
     return RevenueSummary(
         total_cents=total_cents,

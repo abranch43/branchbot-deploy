@@ -10,3 +10,6 @@ sqlalchemy>=2.0
 psycopg2-binary>=2.9
 pandas>=2.0
 python-multipart>=0.0.6
+types-PyYAML>=6.0
+types-requests>=2.31
+pandas-stubs>=2.0
