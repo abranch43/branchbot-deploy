@@ -12,6 +12,7 @@ rendered_social/
 *.pyc
 *.pyo
 *.pyd
+.ruff_cache/
 
 # Local / generated data
 data/
@@ -21,3 +22,6 @@ data/
 *.sqlite
 *.sqlite3
 test_*.db
+
+# Local development logs
+/tmp/branchberg-*.log

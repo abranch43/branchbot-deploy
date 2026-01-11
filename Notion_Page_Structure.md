@@ -284,9 +284,9 @@ cat Procfile  # Should include: worker: python jobs/daily_summary.py
 **Diagnosis:**
 ```sql
 -- Connect to database and check for duplicates
-SELECT event_id, COUNT(*) 
-FROM revenue_events 
-GROUP BY event_id 
+SELECT event_id, COUNT(*)
+FROM revenue_events
+GROUP BY event_id
 HAVING COUNT(*) > 1;
 ```
 

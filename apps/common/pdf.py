@@ -1,7 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 from typing import Iterable
+
 
 def write_pdf_lines(out_path: Path, lines: Iterable[str], font_size: int = 14) -> None:
     """

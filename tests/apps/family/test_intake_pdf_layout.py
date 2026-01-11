@@ -15,4 +15,3 @@ def test_intake_pdf_contains_fields(tmp_path: Path):
     assert b"Jennise" in data
     assert b"iPhone 12" in data
     assert b"Cracked screen" in data
-

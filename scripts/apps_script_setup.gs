@@ -515,4 +515,3 @@ function ensureChildFolder_(parent, name) {
   Logger.log(`Creating folder: ${parent.getName()} / ${name}`);
   return parent.createFolder(name);
 }
-

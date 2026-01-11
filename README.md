@@ -8,7 +8,7 @@
 [![Security: bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-> **One-Click Deploy Revenue Tracker**  
+> **One-Click Deploy Revenue Tracker**
 > Enterprise-grade API + Dashboard + PostgreSQL setup via Railway with automated security, CI/CD, and contributor workflows!
 
 ---
@@ -41,17 +41,17 @@
 
 ## ✅ What's Included
 
-- **One-Click Railway Deploy:**  
+- **One-Click Railway Deploy:**
   Provisions API, Dashboard, and PostgreSQL automatically.
-- **Step-by-Step Setup:**  
+- **Step-by-Step Setup:**
   Deploy, configure webhooks, and go live!
-- **Environment Variables Guide:**  
+- **Environment Variables Guide:**
   All required and optional configs.
-- **Webhook Configuration:**  
+- **Webhook Configuration:**
   Exact URLs for Stripe & Gumroad, plus test commands.
-- **Project Structure:**  
+- **Project Structure:**
   Visual map of the codebase.
-- **Local Development:**  
+- **Local Development:**
   Easy instructions for running locally.
 
 ---
@@ -69,14 +69,14 @@ graph TB
     G[Railway Platform] --> B
     G --> C
     G --> D
-    
+
     subgraph "Security Layer"
         H[Input Validation]
         I[HTTPS/SSL]
         J[Environment Encryption]
         K[Webhook Signature Verification]
     end
-    
+
     B --> H
     B --> I
     B --> J
@@ -95,44 +95,44 @@ graph TB
 
 ## 🛠️ Deploy Steps (Super Short)
 
-1. **Click Deploy:**  
+1. **Click Deploy:**
    - Use the Railway Deploy button above.
 
-2. **Set Variables in Railway:**  
+2. **Set Variables in Railway:**
    - `STRIPE_WEBHOOK_SECRET` (starts with whsec_...)
    - `GUMROAD_WEBHOOK_SECRET` (any shared secret you’ll also use in Gumroad)
    - (optional) `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`
    - `SAFE_MODE=true` (disables risky external integrations in prod)
 
-3. **Wait for branchberg-api to turn green**  
+3. **Wait for branchberg-api to turn green**
    - Copy its Public Domain.
 
-4. **Health check:**  
-   - Visit: `https://<API>/health`  
+4. **Health check:**
+   - Visit: `https://<API>/health`
    - Should return: `{"status":"ok"}`
 
-5. **Point webhooks to these endpoints:**  
+5. **Point webhooks to these endpoints:**
    - **Stripe:** `https://<YOUR-API-DOMAIN>/webhooks/stripe`
    - **Gumroad:** `https://<YOUR-API-DOMAIN>/webhooks/gumroad`
 
-6. **Open your dashboard service URL**  
+6. **Open your dashboard service URL**
    - Totals will auto-refresh every ~10s.
 
 ---
 
 ## 🕹️ Webhook Configuration
 
-- **Stripe:**  
+- **Stripe:**
   - Go to Stripe Dashboard → Developers → Webhooks
-  - Add endpoint:  
+  - Add endpoint:
     ```
     https://<YOUR-API-DOMAIN>/webhooks/stripe
     ```
   - Use signing secret: `STRIPE_WEBHOOK_SECRET`
 
-- **Gumroad:**  
+- **Gumroad:**
   - Go to Gumroad Settings → Advanced → Webhooks
-  - Add endpoint:  
+  - Add endpoint:
     ```
     https://<YOUR-API-DOMAIN>/webhooks/gumroad
     ```
@@ -190,28 +190,43 @@ branchbot-deploy/
    ```
 
 2. **Activate Virtual Environment:**
-   
+
    **Windows (PowerShell):**
    ```powershell
    .\.venv\Scripts\Activate.ps1
    ```
-   
+
    **Windows (Command Prompt):**
    ```cmd
    .venv\Scripts\activate.bat
    ```
-   
+
    **macOS/Linux:**
    ```bash
    source .venv/bin/activate
    ```
 
 3. **Install Dependencies:**
+
+   **Using pip:**
    ```bash
    pip install -r requirements.txt
+   pip install -r requirements-dev.txt  # For development tools
    ```
 
-4. **Configure Environment (Optional):**
+   **Using make:**
+   ```bash
+   make install-dev  # Installs both prod and dev dependencies + pre-commit hooks
+   ```
+
+4. **Set up pre-commit hooks (recommended):**
+   ```bash
+   pre-commit install
+   ```
+   This will automatically run linting, formatting, and security checks before each commit.
+   (Already done if you used `make install-dev`)
+
+5. **Configure Environment (Optional):**
    - Copy `.env.example` to `.env` (already gitignored)
    - Add your secrets if testing webhooks:
      ```
@@ -223,14 +238,27 @@ branchbot-deploy/
 
 ### Running the Services
 
-#### Option 1: Automated Start (Windows PowerShell)
+#### Option 1: Automated Start (Cross-Platform Scripts)
+
+**Windows (PowerShell):**
 ```powershell
 .\scripts\run-local.ps1
 ```
-This script will:
+
+**macOS/Linux (Bash):**
+```bash
+./scripts/run-local.sh
+```
+
+Both scripts will:
 - Activate the virtual environment
 - Start the API on `http://localhost:8000`
 - Start the dashboard on `http://localhost:8502`
+
+Custom ports can be specified:
+```bash
+./scripts/run-local.sh 8080 8503  # API on 8080, Dashboard on 8503
+```
 
 #### Option 2: Manual Start
 
@@ -238,7 +266,7 @@ This script will:
 ```bash
 uvicorn branchberg.app.main:app --reload --port 8000
 ```
-API will be available at: `http://localhost:8000`  
+API will be available at: `http://localhost:8000`
 API docs: `http://localhost:8000/docs`
 
 **Terminal 2 - Streamlit Dashboard:**
@@ -251,7 +279,14 @@ Dashboard will be available at: `http://localhost:8502`
 
 Once running, test the API health:
 ```bash
-curl http://localhost:8000/
+curl http://localhost:8000/health
+# {"status":"ok","service":"BranchOS Revenue API","timestamp":"2024-01-11T00:00:00.000000"}
+```
+
+Check version information:
+```bash
+curl http://localhost:8000/version
+# {"version":"1.0.0","service":"BranchOS Revenue API","python_version":"3.11.x","environment":"development"}
 ```
 
 Add a manual transaction:
@@ -267,19 +302,133 @@ curl -X POST http://localhost:8000/ingest/manual \
 - **Port already in use?** Change ports with `--port` (uvicorn) or `--server.port` (streamlit)
 - **API not connecting?** Ensure `API_URL=http://localhost:8000` is set for the dashboard
 
+### Development Workflow
+
+#### Quick Commands with Make
+
+For convenience, common development tasks can be run using `make`:
+
+```bash
+# Show all available commands
+make help
+
+# Install dependencies and setup pre-commit
+make install-dev
+
+# Run tests
+make test
+
+# Lint code
+make lint
+
+# Format code
+make format
+
+# Check formatting
+make format-check
+
+# Run pre-commit hooks
+make pre-commit
+
+# Clean temporary files
+make clean
+
+# Start API only
+make api
+
+# Start dashboard only
+make dashboard
+```
+
+#### Running Tests
+```bash
+# Run all tests
+pytest
+# or
+make test
+
+# Run specific test file
+pytest branchbot/test_minimal.py
+# or
+make test-minimal
+
+# Run with coverage
+pytest --cov=branchberg --cov=branchbot
+```
+
+#### Linting and Formatting
+```bash
+# Check code with ruff
+ruff check .
+# or
+make lint
+
+# Auto-fix issues
+ruff check --fix .
+
+# Format code
+ruff format .
+# or
+make format
+
+# Check formatting
+make format-check
+
+# Check syntax
+python -m compileall -q .
+# or
+make syntax-check
+```
+
+#### Pre-commit Hooks
+Pre-commit hooks automatically run before each commit:
+- Ruff linting and formatting
+- Trailing whitespace removal
+- End-of-file fixer
+- YAML validation
+- Large file detection
+- Secrets detection (using detect-secrets)
+
+To manually run all hooks:
+```bash
+pre-commit run --all-files
+```
+
+---
+
+## 🔄 Continuous Integration
+
+### GitHub Actions CI
+
+Every pull request and push to `main` automatically runs:
+- **Ruff linting**: Code quality and style checks
+- **Ruff formatting**: Code formatting verification
+- **Python syntax check**: Validates Python syntax with `compileall`
+- **Pytest**: Runs the full test suite
+- **Mypy (optional)**: Type checking if configured
+
+View CI status in the [Actions tab](https://github.com/abranch43/branchbot-deploy/actions).
+
+### Quality Checks
+
+All contributions must pass:
+1. **CI pipeline**: All automated checks must pass
+2. **Pre-commit hooks**: Code quality and security checks
+3. **Code review**: Manual review by maintainers
+
 ---
 
 ## 💰 Live Revenue Tracking
 
 Once deployed, your dashboard shows:
 
-- **Real-time revenue metrics:**  
+- **Real-time revenue metrics:**
   - Today, This Week, All-Time totals
-- **Live event feed:**  
+- **Live event feed:**
   - Timestamps, amounts, event types
-- **Auto-refresh:**  
+- **Auto-refresh:**
   - Updates every 10 seconds
-- **Test events:**  
+- **Test events:**
   - Demo data for Stripe/Gumroad
 
 ---
@@ -296,13 +445,13 @@ Once deployed, your dashboard shows:
 
 ## ❓ FAQ
 
-- **API 404?**  
+- **API 404?**
   Make sure it’s `/webhooks/...` plural.
 
-- **Dashboard shows $0?**  
+- **Dashboard shows $0?**
   Trigger the tests above; then refresh.
 
-- **Health not OK?**  
+- **Health not OK?**
   Check Railway logs on branchberg-api; verify `DATABASE_URL` exists (Postgres plugin).
 
 ---

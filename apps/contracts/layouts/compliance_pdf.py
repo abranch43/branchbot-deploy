@@ -14,4 +14,3 @@ def create_compliance_pdf(receipt: Receipt, out_path: Path) -> None:
         f"Currency: {receipt.currency}",
     ]
     write_pdf_lines(Path(out_path), lines, font_size=14)
-
