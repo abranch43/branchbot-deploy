@@ -120,6 +120,19 @@ graph TB
 
 ---
 
+## 🩺 Health & Version Endpoints
+
+- **`/health`**: quick status check.
+  ```json
+  {"status":"ok"}
+  ```
+- **`/version`**: build metadata for debugging.
+  ```json
+  {"version":"1.0.0","build":"2024-01-15"}
+  ```
+
+---
+
 ## 🕹️ Webhook Configuration
 
 - **Stripe:**  
@@ -414,5 +427,6 @@ The **Empire OS Brief** is a strategic document outlining the vision for modern 
 
 **Note:** The Empire OS Brief PDF is maintained as an external asset and is not tracked in this repository. It is available upon request or as an attachment in campaign materials. See `EMAIL_CAMPAIGN.md` for distribution details.
 
- 
+ 
+ 
  
