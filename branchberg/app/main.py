@@ -107,17 +107,17 @@ def ingest_manual_transaction(
 ):
     """
     Add a manual revenue transaction.
-    
+
     This endpoint allows manual entry of revenue events that don't come
     from automated providers like Stripe or Gumroad.
     """
     # Convert dollars to cents
     amount_cents = int(transaction.amount * 100)
-    
+
     # Create unique IDs
     event_id = f"manual_{uuid.uuid4().hex[:16]}"
     record_id = str(uuid.uuid4())
-    
+
     # Create revenue event
     revenue_event = RevenueEvent(
         id=record_id,
@@ -133,11 +133,11 @@ def ingest_manual_transaction(
         created_at=datetime.utcnow(),
         processed_at=datetime.utcnow()
     )
-    
+
     db.add(revenue_event)
     db.commit()
     db.refresh(revenue_event)
-    
+
     return RevenueEventResponse.from_orm(revenue_event)
 
 
@@ -153,7 +153,7 @@ def ingest_csv_transactions(
 ):
     """
     Upload CSV file and ingest transactions with column mapping.
-    
+
     The CSV file should have headers. You specify which columns contain
     the relevant data.
     """
@@ -161,31 +161,31 @@ def ingest_csv_transactions(
         # Read CSV file
         contents = file.file.read().decode("utf-8")
         df = pd.read_csv(StringIO(contents))
-        
+
         # Validate required column exists
         if amount_column not in df.columns:
             raise HTTPException(
                 status_code=400,
                 detail=f"Amount column '{amount_column}' not found in CSV"
             )
-        
+
         # Process each row
         created_count = 0
         errors = []
-        
+
         for idx, row in df.iterrows():
             try:
                 # Extract amount (handle both float and string formats)
                 amount_str = str(row[amount_column]).replace("$", "").replace(",", "").strip()
                 amount = float(amount_str)
                 amount_cents = int(amount * 100)
-                
+
                 # Extract other fields if columns are specified
                 currency = row[currency_column] if currency_column and currency_column in df.columns else "USD"
                 email = row[email_column] if email_column and email_column in df.columns else None
                 entity = row[entity_column] if entity_column and entity_column in df.columns else None
                 description = row[description_column] if description_column and description_column in df.columns else None
-                
+
                 # Convert to string and handle NaN
                 if pd.isna(email):
                     email = None
@@ -193,11 +193,11 @@ def ingest_csv_transactions(
                     entity = None
                 if pd.isna(description):
                     description = None
-                
+
                 # Create unique IDs
                 event_id = f"csv_{uuid.uuid4().hex[:16]}"
                 record_id = str(uuid.uuid4())
-                
+
                 # Create revenue event
                 revenue_event = RevenueEvent(
                     id=record_id,
@@ -212,27 +212,27 @@ def ingest_csv_transactions(
                     created_at=datetime.utcnow(),
                     processed_at=datetime.utcnow()
                 )
-                
+
                 db.add(revenue_event)
                 created_count += 1
-                
+
             except Exception as e:
                 errors.append(f"Row {idx + 1}: {str(e)}")
-        
+
         # Commit all transactions
         db.commit()
-        
+
         return {
             "success": True,
             "created_count": created_count,
             "total_rows": len(df),
             "errors": errors if errors else None
         }
-        
+
     except pd.errors.EmptyDataError:
-        raise HTTPException(status_code=400, detail="CSV file is empty")
+        raise HTTPException(status_code=400, detail="CSV file is empty") from None
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}") from e
     finally:
         file.file.close()
 
@@ -247,10 +247,10 @@ def get_revenue_summary(db: Session = Depends(get_db)):
         func.sum(RevenueEvent.amount_cents).label("total_cents"),
         func.count(RevenueEvent.id).label("count")
     ).first()
-    
+
     total_cents = result.total_cents if result.total_cents else 0
     count = result.count if result.count else 0
-    
+
     return RevenueSummary(
         total_cents=total_cents,
         total_dollars=total_cents / 100.0,
@@ -266,7 +266,7 @@ def get_revenue_events(
 ):
     """
     Get recent revenue transactions.
-    
+
     Parameters:
     - limit: Maximum number of events to return (default: 50)
     - offset: Number of events to skip for pagination (default: 0)
@@ -274,7 +274,7 @@ def get_revenue_events(
     events = db.query(RevenueEvent).order_by(
         RevenueEvent.created_at.desc()
     ).limit(limit).offset(offset).all()
-    
+
     return [RevenueEventResponse.from_orm(event) for event in events]
 
 
