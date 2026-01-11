@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "branchbot-deploy"
+version = "0.1.0"
+description = "Enterprise-grade Revenue Tracker API + Dashboard for Stripe & Gumroad"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Antonio Branch", email = "antonio.branch31@gmail.com"}
+]
+keywords = ["revenue", "tracking", "stripe", "gumroad", "fastapi", "streamlit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+    "openai>=2.14",
+    "stripe>=7.0",
+    "streamlit>=1.33",
+    "reportlab>=4.0.0",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "pandas>=2.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "httpx>=0.25",  # For TestClient in FastAPI tests
+]
+
+[project.urls]
+Homepage = "https://github.com/abranch43/branchbot-deploy"
+Repository = "https://github.com/abranch43/branchbot-deploy"
+Issues = "https://github.com/abranch43/branchbot-deploy/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["branchbot*", "branchberg*", "apps*", "jobs*", "ops*"]
+exclude = ["tests*", "docs*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "branchbot"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-ra", "-q", "--strict-markers"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

@@ -96,7 +96,13 @@ class RevenueSummary(BaseModel):
 # Endpoints
 @app.get("/")
 def read_root():
-    """Health check endpoint."""
+    """Root endpoint."""
+    return {"status": "ok", "service": "BranchOS Revenue API"}
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring."""
     return {"status": "ok", "service": "BranchOS Revenue API"}
 
 

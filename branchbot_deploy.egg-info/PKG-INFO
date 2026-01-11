@@ -1,3 +1,42 @@
+Metadata-Version: 2.4
+Name: branchbot-deploy
+Version: 0.1.0
+Summary: Enterprise-grade Revenue Tracker API + Dashboard for Stripe & Gumroad
+Author-email: Antonio Branch <antonio.branch31@gmail.com>
+License: MIT
+Project-URL: Homepage, https://github.com/abranch43/branchbot-deploy
+Project-URL: Repository, https://github.com/abranch43/branchbot-deploy
+Project-URL: Issues, https://github.com/abranch43/branchbot-deploy/issues
+Keywords: revenue,tracking,stripe,gumroad,fastapi,streamlit
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.110
+Requires-Dist: uvicorn[standard]>=0.27
+Requires-Dist: requests>=2.31
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: openai>=2.14
+Requires-Dist: stripe>=7.0
+Requires-Dist: streamlit>=1.33
+Requires-Dist: reportlab>=4.0.0
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: psycopg2-binary>=2.9
+Requires-Dist: pandas>=2.0
+Requires-Dist: python-multipart>=0.0.6
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: httpx>=0.25; extra == "dev"
+Dynamic: license-file
+
 [![CI](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/abranch43/branchbot-deploy/actions/workflows/ci.yml)
 
 # branchbot-deploy
@@ -453,5 +492,6 @@ The **Empire OS Brief** is a strategic document outlining the vision for modern 
 
 **Note:** The Empire OS Brief PDF is maintained as an external asset and is not tracked in this repository. It is available upon request or as an attachment in campaign materials. See `EMAIL_CAMPAIGN.md` for distribution details.
 
- 
+
+ 
  
