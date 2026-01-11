@@ -172,16 +172,13 @@ def ingest_csv_transactions(
         # Process each row
         created_count = 0
         errors: list[str] = []
+        row_counter = 0  # Track actual row position
 
         for idx_val, row in df.iterrows():
+            row_counter += 1
             try:
-                # Convert index to row number for error messages
-                # iterrows() returns (index, Series) where index can be any hashable
-                if isinstance(idx_val, int):
-                    row_num = idx_val + 1
-                else:
-                    # If index is not int, use the position instead
-                    row_num = created_count + len(errors) + 1
+                # Use row counter for consistent row numbering
+                row_num = row_counter
                 
                 # Extract amount (handle both float and string formats)
                 amount_str = str(row[amount_column]).replace("$", "").replace(",", "").strip()
@@ -258,11 +255,11 @@ def get_revenue_summary(db: Session = Depends(get_db)):
 
     # Handle None result and ensure proper types
     if result is not None:
-        # Use getattr to avoid mypy confusion with built-in count function
-        total_cents_val = result.total_cents
-        count_val = getattr(result, 'count')
-        total_cents: int = int(total_cents_val) if total_cents_val else 0
-        count: int = int(count_val) if count_val else 0
+        # Access attributes by index to avoid mypy confusion with built-in count
+        total_cents_val = result[0]  # total_cents
+        count_val = result[1]  # count
+        total_cents: int = int(total_cents_val) if total_cents_val is not None else 0
+        count: int = int(count_val) if count_val is not None else 0
     else:
         total_cents = 0
         count = 0
