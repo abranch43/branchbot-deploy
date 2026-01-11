@@ -1,4 +1,26 @@
+# --- Default: normalize text files to LF in repo ---
 * text=auto eol=lf
-*.ps1 text eol=crlf
-*.bat text eol=crlf
-*.md text working-tree-encoding=UTF-8
+
+# --- Explicit file types ---
+*.py     text eol=lf working-tree-encoding=UTF-8
+*.sh     text eol=lf
+*.yml    text eol=lf working-tree-encoding=UTF-8
+*.yaml   text eol=lf working-tree-encoding=UTF-8
+*.toml   text eol=lf working-tree-encoding=UTF-8
+*.ini    text eol=lf working-tree-encoding=UTF-8
+*.cfg    text eol=lf working-tree-encoding=UTF-8
+*.md     text eol=lf working-tree-encoding=UTF-8
+*.txt    text eol=lf working-tree-encoding=UTF-8
+
+# --- Binary (never touch) ---
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
+
+# --- Prevent accidental BOM in common configs ---
+.editorconfig text eol=lf working-tree-encoding=UTF-8
+.pre-commit-config.yaml text eol=lf working-tree-encoding=UTF-8
+pytest.ini text eol=lf working-tree-encoding=UTF-8
