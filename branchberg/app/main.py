@@ -228,11 +228,11 @@ def ingest_csv_transactions(
             "total_rows": len(df),
             "errors": errors if errors else None
         }
-        
+
     except pd.errors.EmptyDataError:
-        raise HTTPException(status_code=400, detail="CSV file is empty")
+        raise HTTPException(status_code=400, detail="CSV file is empty") from None
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}") from e
     finally:
         file.file.close()
 

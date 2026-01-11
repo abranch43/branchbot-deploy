@@ -141,7 +141,7 @@ if page == "Income Ingest":
                     st.rerun()
                 else:
                     st.error(error)
-    
+
     with col2:
         st.subheader("📊 CSV Upload")
         st.markdown("Upload a CSV file with revenue transactions. Map your columns below.")
