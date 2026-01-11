@@ -32,9 +32,13 @@ jobs:
           pip install -q mypy || true
 
       - name: Ruff (if present)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: ruff check . || true
 
       - name: Mypy (if config present)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           if [ -f mypy.ini ] || [ -f pyproject.toml ]; then
             mypy .

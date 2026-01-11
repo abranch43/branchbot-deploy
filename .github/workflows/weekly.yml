@@ -15,6 +15,7 @@ jobs:
       - name: Weekly tasks
         run: python scripts/weekly.py
         env:
+          PYTHONPATH: ${{ github.workspace }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
           NOTION_VERSION: 2022-06-28
