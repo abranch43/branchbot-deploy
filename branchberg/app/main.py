@@ -1,10 +1,11 @@
 """FastAPI backend with Stripe & Gumroad webhooks and Universal Income Ingest."""
-import os
+import importlib.util
 import uuid
 from datetime import datetime
 from typing import List, Optional
 from io import StringIO
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,46 @@ import pandas as pd
 
 from .database import init_db, get_db, RevenueEvent
 
+APP_NAME = "BranchOS Revenue API"
+DEFAULT_VERSION = "0.0.0"
+
+
+def _load_toml(path: Path) -> Optional[dict]:
+    if importlib.util.find_spec("tomllib"):
+        import tomllib
+
+        with path.open("rb") as handle:
+            return tomllib.load(handle)
+    if importlib.util.find_spec("tomli"):
+        import tomli
+
+        with path.open("rb") as handle:
+            return tomli.load(handle)
+    return None
+
+
+def _find_pyproject(start: Path) -> Optional[Path]:
+    for parent in [start, *start.parents]:
+        candidate = parent / "pyproject.toml"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def resolve_version() -> str:
+    pyproject_path = _find_pyproject(Path(__file__).resolve())
+    if not pyproject_path:
+        return DEFAULT_VERSION
+    try:
+        toml_data = _load_toml(pyproject_path)
+    except OSError:
+        return DEFAULT_VERSION
+    if not toml_data:
+        return DEFAULT_VERSION
+    project_data = toml_data.get("project", {})
+    version = project_data.get("version")
+    return version or DEFAULT_VERSION
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,7 +64,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="BranchOS Revenue API", lifespan=lifespan)
+app = FastAPI(title=APP_NAME, lifespan=lifespan)
 
 # CORS middleware for Streamlit
 app.add_middleware(
@@ -109,15 +150,9 @@ def health():
 @app.get("/version")
 def version():
     """Version information endpoint."""
-    # Try to get version from package metadata, fallback to 0.0.0
-    version_string = "0.0.0"
-    
-    # Get git SHA from environment variables
-    git_sha = os.environ.get("GIT_SHA") or os.environ.get("GITHUB_SHA") or "unknown"
-    
     return {
-        "version": version_string,
-        "git_sha": git_sha
+        "name": APP_NAME,
+        "version": resolve_version(),
     }
 
 
@@ -310,4 +345,3 @@ def stripe_webhook():
 def gumroad_webhook():
     """Gumroad webhook endpoint (to be implemented)."""
     return {"status": "not_implemented", "message": "Gumroad webhook coming soon"}
-
