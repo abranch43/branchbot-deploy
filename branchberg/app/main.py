@@ -100,6 +100,27 @@ def read_root():
     return {"status": "ok", "service": "BranchOS Revenue API"}
 
 
+@app.get("/health")
+def health():
+    """Health check endpoint."""
+    return {"status": "ok"}
+
+
+@app.get("/version")
+def version():
+    """Version information endpoint."""
+    # Try to get version from package metadata, fallback to 0.0.0
+    version_string = "0.0.0"
+    
+    # Get git SHA from environment variables
+    git_sha = os.environ.get("GIT_SHA") or os.environ.get("GITHUB_SHA") or "unknown"
+    
+    return {
+        "version": version_string,
+        "git_sha": git_sha
+    }
+
+
 @app.post("/ingest/manual", response_model=RevenueEventResponse)
 def ingest_manual_transaction(
     transaction: ManualTransaction,

@@ -251,7 +251,12 @@ Dashboard will be available at: `http://localhost:8502`
 
 Once running, test the API health:
 ```bash
-curl http://localhost:8000/
+curl http://localhost:8000/health
+```
+
+Check the API version:
+```bash
+curl http://localhost:8000/version
 ```
 
 Add a manual transaction:
