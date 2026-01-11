@@ -1,8 +1,2 @@
 """Pytest configuration for BranchOS tests."""
-import sys
-import os
-
-# Add project root to Python path for imports
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Note: No sys.path manipulation needed when package is installed with pip install -e .

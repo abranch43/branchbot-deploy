@@ -13,6 +13,11 @@ rendered_social/
 *.pyo
 *.pyd
 
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
 # Local / generated data
 data/
 

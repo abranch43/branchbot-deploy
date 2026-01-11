@@ -206,7 +206,19 @@ branchbot-deploy/
    source .venv/bin/activate
    ```
 
-3. **Install Dependencies:**
+3. **Install Package (Recommended):**
+   
+   **For users:**
+   ```bash
+   pip install -e .
+   ```
+   
+   **For developers (includes ruff, mypy, pytest):**
+   ```bash
+   pip install -e .[dev]
+   ```
+   
+   **Alternative (legacy method):**
    ```bash
    pip install -r requirements.txt
    ```
@@ -263,7 +275,7 @@ curl -X POST http://localhost:8000/ingest/manual \
 
 ### Troubleshooting
 
-- **Imports failing?** Set `PYTHONPATH=.` before running scripts.
+- **Imports failing?** Make sure you've installed the package with `pip install -e .` or `pip install -e .[dev]`
 - **Port already in use?** Change ports with `--port` (uvicorn) or `--server.port` (streamlit)
 - **API not connecting?** Ensure `API_URL=http://localhost:8000` is set for the dashboard
 
@@ -340,10 +352,11 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 ### Quick Start for Contributors
 
 1. **Fork and clone the repository**
-2. **Install dependencies**: `pip install -r requirements.txt`
-3. **Run tests**: `python -m unittest branchbot/test_minimal.py`
-4. **Make your changes following our style guide**
-5. **Submit a pull request**
+2. **Install dev dependencies**: `pip install -e .[dev]`
+3. **Run tests**: `pytest`
+4. **Run linters**: `ruff check .` and `mypy .`
+5. **Make your changes following our style guide**
+6. **Submit a pull request**
 
 ### 📋 Development Standards
 
