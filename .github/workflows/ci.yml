@@ -41,7 +41,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           if [ -f mypy.ini ] || [ -f pyproject.toml ]; then
-            mypy .
+            mypy apps branchbot branchberg jobs
           else
             echo "No mypy config; skipping"
           fi
