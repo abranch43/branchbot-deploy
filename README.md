@@ -355,8 +355,8 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 2. **Install dev dependencies**: `pip install -e .[dev]`
 3. **Run tests**: `pytest`
 4. **Run linters**: `ruff check .` and `mypy .`
-4. **Make your changes following our style guide**
-5. **Submit a pull request**
+5. **Make your changes following our style guide**
+6. **Submit a pull request**
 
 ### 📋 Development Standards
 
