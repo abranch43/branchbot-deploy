@@ -1,7 +1,7 @@
 """Database configuration and models for BranchOS revenue tracking."""
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -21,10 +21,10 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
-class RevenueEvent(Base):
+class RevenueEvent(Base):  # type: ignore[misc,valid-type]
     """Revenue events table - stores all income transactions."""
     __tablename__ = "revenue_events"
 

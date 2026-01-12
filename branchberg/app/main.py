@@ -227,10 +227,15 @@ def ingest_csv_transactions(
 
         # Process each row
         created_count = 0
-        errors = []
+        errors: list[str] = []
+        row_counter = 0  # Track actual row position
 
-        for idx, row in df.iterrows():
+        for idx_val, row in df.iterrows():
+            row_counter += 1
             try:
+                # Use row counter for consistent row numbering
+                row_num = row_counter
+                
                 # Extract amount (handle both float and string formats)
                 amount_str = str(row[amount_column]).replace("$", "").replace(",", "").strip()
                 amount = float(amount_str)
@@ -264,7 +269,7 @@ def ingest_csv_transactions(
                     currency=currency,
                     customer_email=email,
                     entity=entity,
-                    event_metadata={"description": description, "csv_row": idx + 1} if description else {"csv_row": idx + 1},
+                    event_metadata={"description": description, "csv_row": row_num} if description else {"csv_row": row_num},
                     created_at=datetime.utcnow(),
                     processed_at=datetime.utcnow()
                 )
@@ -273,7 +278,7 @@ def ingest_csv_transactions(
                 created_count += 1
 
             except Exception as e:
-                errors.append(f"Row {idx + 1}: {str(e)}")
+                errors.append(f"Row {row_num}: {str(e)}")
 
         # Commit all transactions
         db.commit()
@@ -304,8 +309,16 @@ def get_revenue_summary(db: Session = Depends(get_db)):
         func.count(RevenueEvent.id).label("count")
     ).first()
 
-    total_cents = result.total_cents if result.total_cents else 0
-    count = result.count if result.count else 0
+    # Handle None result and ensure proper types
+    if result is not None:
+        # Access attributes by index to avoid mypy confusion with built-in count
+        total_cents_val = result[0]  # total_cents
+        count_val = result[1]  # count
+        total_cents: int = int(total_cents_val) if total_cents_val is not None else 0
+        count: int = int(count_val) if count_val is not None else 0
+    else:
+        total_cents = 0
+        count = 0
 
     return RevenueSummary(
         total_cents=total_cents,
