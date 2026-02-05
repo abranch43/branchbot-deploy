@@ -7,14 +7,23 @@ from io import StringIO
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 import pandas as pd
 
-from .database import init_db, get_db, RevenueEvent
+from .database import (
+    init_db,
+    get_db,
+    RevenueEvent,
+    PurchaseOrder,
+    Invoice,
+    Payment,
+    AuditLog,
+)
 
 APP_NAME = "BranchOS Revenue API"
 DEFAULT_VERSION = "0.0.0"
@@ -132,6 +141,131 @@ class RevenueSummary(BaseModel):
     total_dollars: float
     count: int
     currency: str = "USD"
+
+
+class PurchaseOrderCreate(BaseModel):
+    """Purchase order creation model."""
+    po_number: str
+    customer_name: str
+    customer_id: Optional[str] = None
+    amount: float
+    currency: str = "USD"
+    entity: Optional[str] = None
+    status: str = "issued"
+    issued_at: Optional[datetime] = None
+    actor: Optional[str] = None
+    reason: Optional[str] = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class PurchaseOrderResponse(BaseModel):
+    """Purchase order response model."""
+    id: str
+    po_number: str
+    customer_name: str
+    customer_id: Optional[str]
+    amount_cents: int
+    amount_dollars: float
+    currency: str
+    status: str
+    entity: Optional[str]
+    issued_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    metadata: dict
+
+
+class InvoiceCreate(BaseModel):
+    """Invoice creation model."""
+    invoice_number: str
+    amount: float
+    currency: str = "USD"
+    status: str = "sent"
+    issued_at: Optional[datetime] = None
+    due_at: Optional[datetime] = None
+    artifact_uri: Optional[str] = None
+    actor: Optional[str] = None
+    reason: Optional[str] = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class InvoiceResponse(BaseModel):
+    """Invoice response model."""
+    id: str
+    invoice_number: str
+    po_id: str
+    amount_cents: int
+    amount_dollars: float
+    currency: str
+    status: str
+    issued_at: Optional[datetime]
+    due_at: Optional[datetime]
+    artifact_uri: Optional[str]
+    entity: Optional[str]
+    customer_id: Optional[str]
+    customer_name: str
+    created_at: datetime
+    updated_at: datetime
+    metadata: dict
+
+
+class PaymentCreate(BaseModel):
+    """Payment creation model."""
+    payment_reference: str
+    amount: float
+    currency: str = "USD"
+    paid_at: Optional[datetime] = None
+    method: str
+    artifact_uri: str
+    actor: Optional[str] = None
+    reason: Optional[str] = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class PaymentResponse(BaseModel):
+    """Payment response model."""
+    id: str
+    invoice_id: str
+    payment_reference: str
+    amount_cents: int
+    amount_dollars: float
+    currency: str
+    paid_at: datetime
+    method: str
+    artifact_uri: str
+    created_at: datetime
+    metadata: dict
+
+
+def _record_audit_log(
+    db: Session,
+    *,
+    entity: Optional[str],
+    actor: str,
+    action: str,
+    po_id: Optional[str] = None,
+    invoice_id: Optional[str] = None,
+    payment_id: Optional[str] = None,
+    from_state: Optional[str] = None,
+    to_state: Optional[str] = None,
+    reason: Optional[str] = None,
+    metadata: Optional[dict] = None,
+) -> None:
+    audit_entry = AuditLog(
+        id=str(uuid.uuid4()),
+        entity=entity,
+        actor=actor,
+        action=action,
+        po_id=po_id,
+        invoice_id=invoice_id,
+        payment_id=payment_id,
+        from_state=from_state,
+        to_state=to_state,
+        reason=reason,
+        record_metadata=metadata or {},
+        created_at=datetime.utcnow(),
+    )
+    db.add(audit_entry)
 
 
 # Endpoints
@@ -332,6 +466,298 @@ def get_revenue_events(
     ).limit(limit).offset(offset).all()
 
     return [RevenueEventResponse.from_orm(event) for event in events]
+
+
+@app.post("/po", response_model=PurchaseOrderResponse)
+def create_purchase_order(
+    payload: PurchaseOrderCreate,
+    db: Session = Depends(get_db),
+):
+    """Create a purchase order."""
+    normalized_status = payload.status.lower().strip()
+    if normalized_status not in {"draft", "issued"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="PO status must be 'draft' or 'issued' on creation.",
+        )
+
+    amount_cents = int(payload.amount * 100)
+    actor = payload.actor or "system"
+    issued_at = payload.issued_at or (datetime.utcnow() if normalized_status == "issued" else None)
+    now = datetime.utcnow()
+
+    purchase_order = PurchaseOrder(
+        id=str(uuid.uuid4()),
+        po_number=payload.po_number,
+        customer_name=payload.customer_name,
+        customer_id=payload.customer_id,
+        amount_cents=amount_cents,
+        currency=payload.currency,
+        status=normalized_status,
+        entity=payload.entity,
+        issued_at=issued_at,
+        created_at=now,
+        updated_at=now,
+        record_metadata=payload.metadata,
+    )
+    db.add(purchase_order)
+    _record_audit_log(
+        db,
+        entity=payload.entity,
+        actor=actor,
+        action="po_created",
+        po_id=purchase_order.id,
+        from_state=None,
+        to_state=normalized_status,
+        reason=payload.reason,
+        metadata={"po_number": payload.po_number},
+    )
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Purchase order violates uniqueness constraints.",
+        ) from exc
+    db.refresh(purchase_order)
+
+    return PurchaseOrderResponse(
+        id=purchase_order.id,
+        po_number=purchase_order.po_number,
+        customer_name=purchase_order.customer_name,
+        customer_id=purchase_order.customer_id,
+        amount_cents=purchase_order.amount_cents,
+        amount_dollars=purchase_order.amount_cents / 100.0,
+        currency=purchase_order.currency,
+        status=purchase_order.status,
+        entity=purchase_order.entity,
+        issued_at=purchase_order.issued_at,
+        created_at=purchase_order.created_at,
+        updated_at=purchase_order.updated_at,
+        metadata=purchase_order.record_metadata or {},
+    )
+
+
+@app.post("/po/{po_id}/invoice", response_model=InvoiceResponse)
+def create_invoice(
+    po_id: str,
+    payload: InvoiceCreate,
+    db: Session = Depends(get_db),
+):
+    """Create an invoice linked to a purchase order."""
+    purchase_order = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+    if not purchase_order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PO not found.")
+
+    if purchase_order.status not in {"issued", "invoiced"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="PO must be in 'issued' or 'invoiced' status to create an invoice.",
+        )
+
+    normalized_status = payload.status.lower().strip()
+    if normalized_status not in {"draft", "sent", "void"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invoice status must be 'draft', 'sent', or 'void' on creation.",
+        )
+
+    amount_cents = int(payload.amount * 100)
+    actor = payload.actor or "system"
+    now = datetime.utcnow()
+    invoice = Invoice(
+        id=str(uuid.uuid4()),
+        invoice_number=payload.invoice_number,
+        po_id=purchase_order.id,
+        amount_cents=amount_cents,
+        currency=payload.currency,
+        status=normalized_status,
+        issued_at=payload.issued_at,
+        due_at=payload.due_at,
+        artifact_uri=payload.artifact_uri,
+        entity=purchase_order.entity,
+        customer_id=purchase_order.customer_id,
+        customer_name=purchase_order.customer_name,
+        created_at=now,
+        updated_at=now,
+        record_metadata=payload.metadata,
+    )
+    db.add(invoice)
+
+    previous_status = purchase_order.status
+    if purchase_order.status == "issued":
+        purchase_order.status = "invoiced"
+        purchase_order.updated_at = now
+
+    _record_audit_log(
+        db,
+        entity=purchase_order.entity,
+        actor=actor,
+        action="invoice_created",
+        po_id=purchase_order.id,
+        invoice_id=invoice.id,
+        from_state=previous_status,
+        to_state=purchase_order.status,
+        reason=payload.reason,
+        metadata={"invoice_number": payload.invoice_number},
+    )
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invoice violates uniqueness constraints.",
+        ) from exc
+
+    db.refresh(invoice)
+
+    return InvoiceResponse(
+        id=invoice.id,
+        invoice_number=invoice.invoice_number,
+        po_id=invoice.po_id,
+        amount_cents=invoice.amount_cents,
+        amount_dollars=invoice.amount_cents / 100.0,
+        currency=invoice.currency,
+        status=invoice.status,
+        issued_at=invoice.issued_at,
+        due_at=invoice.due_at,
+        artifact_uri=invoice.artifact_uri,
+        entity=invoice.entity,
+        customer_id=invoice.customer_id,
+        customer_name=invoice.customer_name,
+        created_at=invoice.created_at,
+        updated_at=invoice.updated_at,
+        metadata=invoice.record_metadata or {},
+    )
+
+
+@app.post("/invoice/{invoice_id}/payment", response_model=PaymentResponse)
+def record_payment(
+    invoice_id: str,
+    payload: PaymentCreate,
+    db: Session = Depends(get_db),
+):
+    """Record a payment tied to an invoice and mark PO paid."""
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found.")
+
+    purchase_order = db.query(PurchaseOrder).filter(PurchaseOrder.id == invoice.po_id).first()
+    if not purchase_order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PO not found for invoice.")
+
+    if invoice.status == "void":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot record payment against a void invoice.",
+        )
+
+    if invoice.status == "paid":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invoice is already marked as paid.",
+        )
+
+    if not payload.artifact_uri:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Payment artifact is required to mark invoice/PO as paid.",
+        )
+
+    amount_cents = int(payload.amount * 100)
+    if amount_cents < invoice.amount_cents:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Payment amount must cover the invoice total.",
+        )
+
+    actor = payload.actor or "system"
+    paid_at = payload.paid_at or datetime.utcnow()
+    now = datetime.utcnow()
+    payment = Payment(
+        id=str(uuid.uuid4()),
+        invoice_id=invoice.id,
+        payment_reference=payload.payment_reference,
+        amount_cents=amount_cents,
+        currency=payload.currency,
+        paid_at=paid_at,
+        method=payload.method,
+        artifact_uri=payload.artifact_uri,
+        entity=purchase_order.entity,
+        created_at=now,
+        record_metadata=payload.metadata,
+    )
+    db.add(payment)
+
+    previous_invoice_status = invoice.status
+    invoice.status = "paid"
+    invoice.updated_at = now
+
+    previous_po_status = purchase_order.status
+    purchase_order.status = "paid"
+    purchase_order.updated_at = now
+
+    revenue_event = RevenueEvent(
+        id=str(uuid.uuid4()),
+        event_id=f"payment_{uuid.uuid4().hex[:16]}",
+        provider="manual",
+        event_type="po_payment",
+        amount_cents=amount_cents,
+        currency=payload.currency,
+        customer_email=None,
+        customer_id=purchase_order.customer_id,
+        entity=purchase_order.entity,
+        event_metadata={
+            "po_id": purchase_order.id,
+            "invoice_id": invoice.id,
+            "payment_id": payment.id,
+            "payment_reference": payload.payment_reference,
+        },
+        created_at=now,
+        processed_at=now,
+    )
+    db.add(revenue_event)
+
+    _record_audit_log(
+        db,
+        entity=purchase_order.entity,
+        actor=actor,
+        action="payment_recorded",
+        po_id=purchase_order.id,
+        invoice_id=invoice.id,
+        payment_id=payment.id,
+        from_state=previous_po_status,
+        to_state=purchase_order.status,
+        reason=payload.reason,
+        metadata={"payment_reference": payload.payment_reference},
+    )
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Payment violates uniqueness constraints.",
+        ) from exc
+
+    db.refresh(payment)
+
+    return PaymentResponse(
+        id=payment.id,
+        invoice_id=payment.invoice_id,
+        payment_reference=payment.payment_reference,
+        amount_cents=payment.amount_cents,
+        amount_dollars=payment.amount_cents / 100.0,
+        currency=payment.currency,
+        paid_at=payment.paid_at,
+        method=payment.method,
+        artifact_uri=payment.artifact_uri,
+        created_at=payment.created_at,
+        metadata=payment.record_metadata or {},
+    )
 
 
 # Webhook endpoints (placeholders for future Stripe/Gumroad integration)
