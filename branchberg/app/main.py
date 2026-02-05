@@ -150,7 +150,7 @@ class PurchaseOrderCreate(BaseModel):
     customer_id: Optional[str] = None
     amount: float
     currency: str = "USD"
-    entity: Optional[str] = None
+    entity: str = Field(..., description="Business entity")
     status: str = "issued"
     issued_at: Optional[datetime] = None
     actor: Optional[str] = None
@@ -168,7 +168,7 @@ class PurchaseOrderResponse(BaseModel):
     amount_dollars: float
     currency: str
     status: str
-    entity: Optional[str]
+    entity: str
     issued_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
@@ -201,7 +201,7 @@ class InvoiceResponse(BaseModel):
     issued_at: Optional[datetime]
     due_at: Optional[datetime]
     artifact_uri: Optional[str]
-    entity: Optional[str]
+    entity: str
     customer_id: Optional[str]
     customer_name: str
     created_at: datetime
@@ -240,7 +240,7 @@ class PaymentResponse(BaseModel):
 def _record_audit_log(
     db: Session,
     *,
-    entity: Optional[str],
+    entity: str,
     actor: str,
     action: str,
     po_id: Optional[str] = None,
@@ -251,6 +251,11 @@ def _record_audit_log(
     reason: Optional[str] = None,
     metadata: Optional[dict] = None,
 ) -> None:
+    if not entity:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Audit log entries require an entity.",
+        )
     audit_entry = AuditLog(
         id=str(uuid.uuid4()),
         entity=entity,
@@ -474,6 +479,13 @@ def create_purchase_order(
     db: Session = Depends(get_db),
 ):
     """Create a purchase order."""
+    if not payload.entity or not payload.entity.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Entity is required to create a purchase order.",
+        )
+    entity_value = payload.entity.strip()
+
     normalized_status = payload.status.lower().strip()
     if normalized_status not in {"draft", "issued"}:
         raise HTTPException(
@@ -494,7 +506,7 @@ def create_purchase_order(
         amount_cents=amount_cents,
         currency=payload.currency,
         status=normalized_status,
-        entity=payload.entity,
+        entity=entity_value,
         issued_at=issued_at,
         created_at=now,
         updated_at=now,
@@ -503,7 +515,7 @@ def create_purchase_order(
     db.add(purchase_order)
     _record_audit_log(
         db,
-        entity=payload.entity,
+        entity=entity_value,
         actor=actor,
         action="po_created",
         po_id=purchase_order.id,
@@ -549,6 +561,12 @@ def create_invoice(
     purchase_order = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
     if not purchase_order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PO not found.")
+
+    if not purchase_order.entity:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Purchase order entity is required to create an invoice.",
+        )
 
     if purchase_order.status not in {"issued", "invoiced"}:
         raise HTTPException(
@@ -648,6 +666,12 @@ def record_payment(
     if not purchase_order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PO not found for invoice.")
 
+    if not invoice.entity or not purchase_order.entity:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invoice and purchase order must include an entity before recording payment.",
+        )
+
     if invoice.status == "void":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -685,7 +709,7 @@ def record_payment(
         paid_at=paid_at,
         method=payload.method,
         artifact_uri=payload.artifact_uri,
-        entity=purchase_order.entity,
+        entity=invoice.entity,
         created_at=now,
         record_metadata=payload.metadata,
     )

@@ -1,8 +1,7 @@
 """Database configuration and models for BranchOS revenue tracking."""
 import os
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -61,7 +60,7 @@ class PurchaseOrder(Base):
     amount_cents = Column(Integer, nullable=False)
     currency = Column(String, default="USD")
     status = Column(String, nullable=False, default="draft")  # draft, issued, invoiced, paid, cancelled
-    entity = Column(String, nullable=True)
+    entity = Column(String, nullable=False)
     issued_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -91,7 +90,7 @@ class Invoice(Base):
     issued_at = Column(DateTime, nullable=True)
     due_at = Column(DateTime, nullable=True)
     artifact_uri = Column(String, nullable=True)
-    entity = Column(String, nullable=True)
+    entity = Column(String, nullable=False)
     customer_id = Column(String, nullable=True)
     customer_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -121,7 +120,7 @@ class Payment(Base):
     paid_at = Column(DateTime, nullable=False)
     method = Column(String, nullable=False)
     artifact_uri = Column(String, nullable=False)
-    entity = Column(String, nullable=True)
+    entity = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     record_metadata = Column("metadata", JSON, default={})
 
@@ -133,7 +132,7 @@ class AuditLog(Base):
     __tablename__ = "audit_log"
 
     id = Column(String, primary_key=True)  # UUID as string
-    entity = Column(String, nullable=True)
+    entity = Column(String, nullable=False)
     actor = Column(String, nullable=False)
     action = Column(String, nullable=False)
     po_id = Column(String, nullable=True)
