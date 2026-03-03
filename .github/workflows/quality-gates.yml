@@ -20,7 +20,7 @@ jobs:
         run: echo "No package.json found. Skipping Node checks."
       - name: Setup Node
         if: steps.detect.outputs.present == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
       - name: Install dependencies
