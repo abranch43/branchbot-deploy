@@ -1,6 +1,7 @@
 """FastAPI backend with Stripe & Gumroad webhooks and Universal Income Ingest."""
 import importlib.util
 import uuid
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from typing import List, Optional
 from io import StringIO
@@ -307,7 +308,7 @@ def ingest_manual_transaction(
     from automated providers like Stripe or Gumroad.
     """
     # Convert dollars to cents
-    amount_cents = int(transaction.amount * 100)
+    amount_cents = int(Decimal(str(transaction.amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) * 100)
 
     # Create unique IDs
     event_id = f"manual_{uuid.uuid4().hex[:16]}"
@@ -372,8 +373,7 @@ def ingest_csv_transactions(
             try:
                 # Extract amount (handle both float and string formats)
                 amount_str = str(row[amount_column]).replace("$", "").replace(",", "").strip()
-                amount = float(amount_str)
-                amount_cents = int(amount * 100)
+                amount_cents = int(Decimal(str(amount_str)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) * 100)
 
                 # Extract other fields if columns are specified
                 currency = row[currency_column] if currency_column and currency_column in df.columns else "USD"
@@ -493,7 +493,7 @@ def create_purchase_order(
             detail="PO status must be 'draft' or 'issued' on creation.",
         )
 
-    amount_cents = int(payload.amount * 100)
+    amount_cents = int(Decimal(str(payload.amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) * 100)
     actor = payload.actor or "system"
     issued_at = payload.issued_at or (datetime.utcnow() if normalized_status == "issued" else None)
     now = datetime.utcnow()
@@ -581,7 +581,12 @@ def create_invoice(
             detail="Invoice status must be 'draft', 'sent', or 'void' on creation.",
         )
 
-    amount_cents = int(payload.amount * 100)
+    amount_cents = int(Decimal(str(payload.amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) * 100)
+    if amount_cents > purchase_order.amount_cents:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invoice amount cannot exceed purchase order amount.",
+        )
     actor = payload.actor or "system"
     now = datetime.utcnow()
     invoice = Invoice(
@@ -690,7 +695,7 @@ def record_payment(
             detail="Payment artifact is required to mark invoice/PO as paid.",
         )
 
-    amount_cents = int(payload.amount * 100)
+    amount_cents = int(Decimal(str(payload.amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) * 100)
     if amount_cents < invoice.amount_cents:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
