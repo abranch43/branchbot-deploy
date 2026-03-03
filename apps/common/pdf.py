@@ -14,7 +14,7 @@ def write_pdf_lines(out_path: Path, lines: Iterable[str], font_size: int = 14) -
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    canvas = Canvas(str(out_path), pagesize=LETTER)
+    canvas = Canvas(str(out_path), pagesize=LETTER, pageCompression=0)
     width, height = LETTER
 
     y = height - 72  # top margin

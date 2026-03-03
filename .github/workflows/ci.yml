@@ -56,9 +56,4 @@ jobs:
       - name: Unit tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: |
-          if [ -f branchbot/test_minimal.py ]; then
-            python -X utf8 -m pytest -q branchbot/test_minimal.py
-          else
-            python -X utf8 -m pytest -q
-          fi
+        run: python -X utf8 -m pytest -q
