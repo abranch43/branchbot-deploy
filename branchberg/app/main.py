@@ -1,5 +1,6 @@
 """FastAPI backend with Stripe & Gumroad webhooks and Universal Income Ingest."""
 import importlib.util
+import os
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -292,6 +293,7 @@ def version():
     return {
         "name": APP_NAME,
         "version": resolve_version(),
+        "git_sha": os.getenv("GIT_SHA") or os.getenv("GITHUB_SHA") or "unknown",
     }
 
 
@@ -695,6 +697,12 @@ def record_payment(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Payment amount must cover the invoice total.",
+        )
+
+    if payload.currency != invoice.currency:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Payment currency must match invoice currency.",
         )
 
     actor = payload.actor or "system"
