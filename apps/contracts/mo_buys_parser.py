@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass(slots=True)
@@ -20,5 +19,5 @@ class Receipt:
     id: str
     buyer_name: str
     buyer_email: str
-    items: List[ReceiptItem]
+    items: list[ReceiptItem]
     currency: str = "USD"

@@ -20,4 +20,4 @@ def write_screen_repair_intake_pdf(
         f"Device: {device}",
         f"Issue: {issue}",
     ]
-    write_pdf_lines(Path(out_path), lines, font_size=14)
+    write_pdf_lines(out_path, lines, font_size=14)

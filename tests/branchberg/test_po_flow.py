@@ -199,6 +199,42 @@ def test_payment_rejects_currency_mismatch(client, test_db):
     assert "currency" in payment_response.json()["detail"].lower()
 
 
+def test_payment_accepts_normalized_currency_values(client, test_db):
+    """Ensure lowercase/whitespace currency values normalize before comparison."""
+    po_payload = {
+        "po_number": "PO-CUR-2",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-CUR-2",
+        "amount": 1000.00,
+        "currency": "usd",
+        "status": "sent",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 200
+    invoice_id = invoice_response.json()["id"]
+
+    payment_payload = {
+        "payment_reference": "PAY-CUR-2",
+        "amount": 1000.00,
+        "currency": " USD ",
+        "method": "ach",
+        "artifact_uri": "s3://receipt",
+    }
+    payment_response = client.post(f"/invoice/{invoice_id}/payment", json=payment_payload)
+    assert payment_response.status_code == 200
+    assert payment_response.json()["currency"] == "USD"
+
+
 def teardown_module(module):
     """Clean up test database file."""
     import os
