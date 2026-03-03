@@ -1,5 +1,6 @@
 """FastAPI backend with Stripe & Gumroad webhooks and Universal Income Ingest."""
 import importlib.util
+import os
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -293,6 +294,7 @@ def version():
     return {
         "name": APP_NAME,
         "version": resolve_version(),
+        "git_sha": os.getenv("GIT_SHA") or os.getenv("GITHUB_SHA") or "unknown",
     }
 
 
@@ -495,6 +497,7 @@ def create_purchase_order(
         )
 
     amount_cents = int(payload.amount * 100)
+    po_currency = payload.currency.strip().upper()
     actor = payload.actor or "system"
     issued_at = payload.issued_at or (datetime.utcnow() if normalized_status == "issued" else None)
     now = datetime.utcnow()
@@ -505,7 +508,7 @@ def create_purchase_order(
         customer_name=payload.customer_name,
         customer_id=payload.customer_id,
         amount_cents=amount_cents,
-        currency=payload.currency,
+        currency=po_currency,
         status=normalized_status,
         entity=entity_value,
         issued_at=issued_at,
@@ -595,6 +598,7 @@ def create_invoice(
         )
 
     amount_cents = int(payload.amount * 100)
+    po_currency = payload.currency.strip().upper()
     actor = payload.actor or "system"
     now = datetime.utcnow()
     invoice = Invoice(
@@ -602,7 +606,7 @@ def create_invoice(
         invoice_number=payload.invoice_number,
         po_id=purchase_order.id,
         amount_cents=amount_cents,
-        currency=payload.currency,
+        currency=po_currency,
         status=normalized_status,
         issued_at=payload.issued_at,
         due_at=payload.due_at,
@@ -710,6 +714,14 @@ def record_payment(
             detail="Payment amount must cover the invoice total.",
         )
 
+    invoice_currency = (invoice.currency or "").strip().upper()
+    payment_currency = payload.currency.strip().upper()
+    if payment_currency != invoice_currency:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Payment currency must match invoice currency.",
+        )
+
     actor = payload.actor or "system"
     paid_at = payload.paid_at or datetime.utcnow()
     now = datetime.utcnow()
@@ -718,7 +730,7 @@ def record_payment(
         invoice_id=invoice.id,
         payment_reference=payload.payment_reference,
         amount_cents=amount_cents,
-        currency=payload.currency,
+        currency=invoice_currency,
         paid_at=paid_at,
         method=payload.method,
         artifact_uri=payload.artifact_uri,
@@ -742,7 +754,7 @@ def record_payment(
         provider="manual",
         event_type="po_payment",
         amount_cents=amount_cents,
-        currency=payload.currency,
+        currency=invoice_currency,
         customer_email=None,
         customer_id=purchase_order.customer_id,
         entity=purchase_order.entity,
