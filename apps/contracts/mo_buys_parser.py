@@ -20,4 +20,4 @@ class Receipt:
     buyer_name: str
     buyer_email: str
     items: list[ReceiptItem]
-    currency: str = "USD"
+    currency: str
