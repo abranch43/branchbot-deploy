@@ -181,6 +181,7 @@ class InvoiceCreate(BaseModel):
     invoice_number: str
     amount: float
     currency: str = "USD"
+    entity: Optional[str] = None
     status: str = "sent"
     issued_at: Optional[datetime] = None
     due_at: Optional[datetime] = None
@@ -582,6 +583,18 @@ def create_invoice(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Invoice status must be 'draft', 'sent', or 'void' on creation.",
+        )
+
+    if payload.currency != purchase_order.currency:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invoice currency must match purchase order currency.",
+        )
+
+    if purchase_order.entity != payload.entity and payload.entity is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invoice entity must match purchase order entity.",
         )
 
     amount_cents = int(payload.amount * 100)

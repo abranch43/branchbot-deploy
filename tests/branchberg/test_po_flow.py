@@ -96,6 +96,57 @@ def test_po_requires_entity(client, test_db):
     assert po_response.status_code == 422
 
 
+def test_invoice_rejects_currency_mismatch_with_purchase_order(client, test_db):
+    """Ensure invoice currency aligns to its purchase order currency."""
+    po_payload = {
+        "po_number": "PO-CURRENCY-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-CURRENCY-1",
+        "amount": 1000.00,
+        "currency": "EUR",
+        "status": "sent",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 422
+    assert invoice_response.json()["detail"] == "Invoice currency must match purchase order currency."
+
+
+def test_invoice_rejects_entity_mismatch_with_purchase_order(client, test_db):
+    """Ensure invoice entity cannot conflict with purchase order entity."""
+    po_payload = {
+        "po_number": "PO-ENTITY-3",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-ENTITY-3",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "Legacy Unchained Inc",
+        "status": "sent",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 422
+    assert invoice_response.json()["detail"] == "Invoice entity must match purchase order entity."
+
+
 def test_payment_rejects_missing_entity_context(client, test_db):
     """Ensure payment creation fails if invoice/PO entity context is missing."""
     session = TestingSessionLocal(expire_on_commit=False)
