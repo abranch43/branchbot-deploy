@@ -1,0 +1,37 @@
+BRANCHBOT / BRANCHOS BACKEND SNAPSHOT - 2026-03-06
+
+Core backend:
+- branchberg/app/main.py
+- branchberg/app/database.py
+- branchberg/app/revenue_agent/
+
+Key routes:
+- /ingest/manual
+- /ingest/csv
+- /revenue/summary
+- /revenue/events
+- /po
+- /po/{po_id}/invoice
+- /invoice/{invoice_id}/payment
+- /webhooks/stripe
+- /webhooks/gumroad
+
+Core tables:
+- RevenueEvent
+- PurchaseOrder
+- Invoice
+- Payment
+- AuditLog
+
+Recent hardening:
+- tests stabilized
+- git_sha added to /version
+- Windows DB teardown fixed
+- invoice currency/entity validation added
+- webhook validation/payload handling hardened
+
+Main bottleneck:
+- branchberg/app/main.py (~899 lines)
+
+Next future refactor:
+- split schemas and route modules out of main.py
