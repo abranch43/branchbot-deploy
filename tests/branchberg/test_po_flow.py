@@ -289,8 +289,19 @@ def test_payment_accepts_normalized_currency_values(client, test_db):
 def teardown_module(module):
     """Clean up test database file."""
     import os
+    import time
+
+    engine.dispose()
 
     try:
         os.remove("test_branchbot_po.db")
     except FileNotFoundError:
         pass
+    except PermissionError:
+        for _ in range(10):
+            time.sleep(0.05)
+            try:
+                os.remove("test_branchbot_po.db")
+                break
+            except (FileNotFoundError, PermissionError):
+                pass

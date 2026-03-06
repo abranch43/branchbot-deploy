@@ -8,7 +8,7 @@ from io import StringIO
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, status
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -25,6 +25,10 @@ from .database import (
     Payment,
     AuditLog,
 )
+
+from .revenue_agent.config import AgentSettings
+from .revenue_agent.webhooks.stripe import handle_stripe_webhook
+from .revenue_agent.webhooks.gumroad import handle_gumroad_webhook
 
 APP_NAME = "BranchOS Revenue API"
 DEFAULT_VERSION = "0.0.0"
@@ -67,6 +71,14 @@ def resolve_version() -> str:
     return version or DEFAULT_VERSION
 
 
+def resolve_git_sha() -> str:
+    for key in ("GIT_SHA", "GITHUB_SHA", "RAILWAY_GIT_COMMIT_SHA", "COMMIT_SHA"):
+        value = os.getenv(key)
+        if value:
+            return value
+    return "unknown"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database on startup."""
@@ -75,6 +87,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, lifespan=lifespan)
+
+# Revenue Tracking Agent settings (AGENTS.md)
+AGENT_SETTINGS = AgentSettings.from_env()
 
 # CORS middleware for Streamlit
 app.add_middleware(
@@ -294,7 +309,7 @@ def version():
     return {
         "name": APP_NAME,
         "version": resolve_version(),
-        "git_sha": os.getenv("GIT_SHA") or os.getenv("GITHUB_SHA") or "unknown",
+        "git_sha": resolve_git_sha(),
     }
 
 
@@ -811,12 +826,23 @@ def record_payment(
 
 # Webhook endpoints (placeholders for future Stripe/Gumroad integration)
 @app.post("/webhooks/stripe")
-def stripe_webhook():
-    """Stripe webhook endpoint (to be implemented)."""
-    return {"status": "not_implemented", "message": "Stripe webhook coming soon"}
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+    """Stripe webhook endpoint.
+
+    NOTE: Business logic lives in `branchberg.app.revenue_agent.webhooks.stripe`.
+    TODO: Once deployed with strict signature verification, consider returning
+    proper 4xx codes on invalid signatures.
+    """
+
+    return await handle_stripe_webhook(request, db, AGENT_SETTINGS)
 
 
 @app.post("/webhooks/gumroad")
-def gumroad_webhook():
-    """Gumroad webhook endpoint (to be implemented)."""
-    return {"status": "not_implemented", "message": "Gumroad webhook coming soon"}
+async def gumroad_webhook(request: Request, db: Session = Depends(get_db)):
+    """Gumroad webhook endpoint.
+
+    NOTE: Business logic lives in `branchberg.app.revenue_agent.webhooks.gumroad`.
+    TODO: Confirm Gumroad signature scheme and enforce strict 4xx responses.
+    """
+
+    return await handle_gumroad_webhook(request, db, AGENT_SETTINGS)
