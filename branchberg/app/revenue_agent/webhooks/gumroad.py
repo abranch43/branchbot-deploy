@@ -8,13 +8,23 @@ from __future__ import annotations
 
 import hmac
 import hashlib
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import Request
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from branchberg.app.revenue_agent.config import AgentSettings
 from branchberg.app.revenue_agent.repository import RevenueEventIngest, insert_revenue_event_idempotent
+
+
+class GumroadWebhookResponse(BaseModel):
+    status: str
+    provider: str = "gumroad"
+    processed: bool
+    reason: Optional[str] = None
+    created: Optional[bool] = None
+    event_id: Optional[str] = None
 
 
 def _verify_gumroad_signature(*, secret: str, order_number: str, signature: str) -> bool:
@@ -45,7 +55,9 @@ def _to_int_cents(price: Any) -> int:
         return 0
 
 
-async def handle_gumroad_webhook(request: Request, db: Session, settings: AgentSettings) -> dict[str, Any]:
+async def handle_gumroad_webhook(
+    request: Request, db: Session, settings: AgentSettings
+) -> tuple[GumroadWebhookResponse, int]:
     """Verify + ingest a Gumroad webhook.
 
     For now this returns 200-style JSON on errors (no exceptions), mirroring the
@@ -55,20 +67,20 @@ async def handle_gumroad_webhook(request: Request, db: Session, settings: AgentS
     """
 
     if settings.safe_mode:
-        return {
-            "status": "safe_mode",
-            "provider": "gumroad",
-            "processed": False,
-            "reason": "SAFE_MODE=true",
-        }
+        return (
+            GumroadWebhookResponse(status="safe_mode", processed=False, reason="SAFE_MODE=true"),
+            200,
+        )
 
     if not settings.gumroad_webhook_secret:
-        return {
-            "status": "not_configured",
-            "provider": "gumroad",
-            "processed": False,
-            "reason": "missing GUMROAD_WEBHOOK_SECRET",
-        }
+        return (
+            GumroadWebhookResponse(
+                status="not_configured",
+                processed=False,
+                reason="missing GUMROAD_WEBHOOK_SECRET",
+            ),
+            500,
+        )
 
     form = await request.form()
 
@@ -80,12 +92,14 @@ async def handle_gumroad_webhook(request: Request, db: Session, settings: AgentS
         order_number=order_number,
         signature=signature,
     ):
-        return {
-            "status": "invalid",
-            "provider": "gumroad",
-            "processed": False,
-            "reason": "signature_failed",
-        }
+        return (
+            GumroadWebhookResponse(
+                status="invalid",
+                processed=False,
+                reason="signature_failed",
+            ),
+            401,
+        )
 
     email = str(form.get("email") or "").strip() or None
     currency = str(form.get("currency") or "USD").strip().upper() or "USD"
@@ -98,12 +112,14 @@ async def handle_gumroad_webhook(request: Request, db: Session, settings: AgentS
     # - `order_number` plus a suffix for refunds
     event_id = order_number or None
     if not event_id:
-        return {
-            "status": "invalid",
-            "provider": "gumroad",
-            "processed": False,
-            "reason": "missing_order_number",
-        }
+        return (
+            GumroadWebhookResponse(
+                status="invalid",
+                processed=False,
+                reason="missing_order_number",
+            ),
+            401,
+        )
 
     event_type = "sale"  # TODO: detect refunds/chargebacks if Gumroad includes such signals.
 
@@ -126,10 +142,12 @@ async def handle_gumroad_webhook(request: Request, db: Session, settings: AgentS
 
     record, created = insert_revenue_event_idempotent(db, ingest)
 
-    return {
-        "status": "ok",
-        "provider": "gumroad",
-        "processed": True,
-        "created": created,
-        "event_id": record.event_id,
-    }
+    return (
+        GumroadWebhookResponse(
+            status="ok",
+            processed=True,
+            created=created,
+            event_id=record.event_id,
+        ),
+        200,
+    )

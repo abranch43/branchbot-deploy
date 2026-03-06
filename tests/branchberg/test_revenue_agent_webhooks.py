@@ -104,7 +104,7 @@ def test_stripe_webhook_missing_secret(client, db_session_factory, monkeypatch):
     _set_agent_settings(monkeypatch, safe_mode=False, stripe_secret=None, gumroad_secret="gsec")
 
     res = client.post("/webhooks/stripe", content=b"{}", headers={"Stripe-Signature": "t=1,v1=abc"})
-    assert res.status_code == 200
+    assert res.status_code == 500
     body = res.json()
     assert body["status"] == "not_configured"
     assert body["provider"] == "stripe"
@@ -122,7 +122,7 @@ def test_stripe_webhook_invalid_signature_or_parse(client, db_session_factory, m
     monkeypatch.setattr(stripe.Webhook, "construct_event", boom, raising=True)
 
     res = client.post("/webhooks/stripe", content=b"{}", headers={"Stripe-Signature": "bad"})
-    assert res.status_code == 200
+    assert res.status_code == 401
     body = res.json()
     assert body["status"] == "invalid"
     assert body["provider"] == "stripe"
@@ -180,7 +180,7 @@ def test_gumroad_webhook_missing_secret(client, db_session_factory, monkeypatch)
     _set_agent_settings(monkeypatch, safe_mode=False, stripe_secret="whsec", gumroad_secret=None)
 
     res = client.post("/webhooks/gumroad", data={"order_number": "ORD1", "signature": "abc"})
-    assert res.status_code == 200
+    assert res.status_code == 500
     body = res.json()
     assert body["status"] == "not_configured"
     assert body["provider"] == "gumroad"
@@ -199,7 +199,7 @@ def test_gumroad_webhook_invalid_signature(client, db_session_factory, monkeypat
             "currency": "USD",
         },
     )
-    assert res.status_code == 200
+    assert res.status_code == 401
     body = res.json()
     assert body["status"] == "invalid"
     assert body["provider"] == "gumroad"

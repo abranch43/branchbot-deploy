@@ -10,7 +10,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
@@ -27,8 +28,8 @@ from .database import (
 )
 
 from .revenue_agent.config import AgentSettings
-from .revenue_agent.webhooks.stripe import handle_stripe_webhook
-from .revenue_agent.webhooks.gumroad import handle_gumroad_webhook
+from .revenue_agent.webhooks.stripe import handle_stripe_webhook, StripeWebhookResponse
+from .revenue_agent.webhooks.gumroad import handle_gumroad_webhook, GumroadWebhookResponse
 
 APP_NAME = "BranchOS Revenue API"
 DEFAULT_VERSION = "0.0.0"
@@ -102,14 +103,31 @@ app.add_middleware(
 
 
 # Pydantic models
+def _normalize_currency(value: str) -> str:
+    normalized = (value or "").strip().upper()
+    return normalized or "USD"
+
+
+def _non_empty_trimmed(value: str) -> str:
+    trimmed = (value or "").strip()
+    if not trimmed:
+        raise ValueError("must not be empty")
+    return trimmed
+
+
 class ManualTransaction(BaseModel):
     """Manual transaction entry."""
-    amount: float = Field(..., description="Transaction amount in dollars")
+    amount: float = Field(..., gt=0, description="Transaction amount in dollars")
     currency: str = Field(default="USD", description="Currency code")
     customer_email: Optional[str] = Field(None, description="Customer email")
     customer_id: Optional[str] = Field(None, description="Customer ID")
     entity: Optional[str] = Field(None, description="Business entity")
     description: Optional[str] = Field(None, description="Transaction description")
+
+    @field_validator("currency")
+    @classmethod
+    def _currency_upper(cls, v: str) -> str:
+        return _normalize_currency(v)
 
 
 class RevenueEventResponse(BaseModel):
@@ -161,10 +179,10 @@ class RevenueSummary(BaseModel):
 
 class PurchaseOrderCreate(BaseModel):
     """Purchase order creation model."""
-    po_number: str
+    po_number: str = Field(..., min_length=1)
     customer_name: str
     customer_id: Optional[str] = None
-    amount: float
+    amount: float = Field(..., gt=0)
     currency: str = "USD"
     entity: str = Field(..., description="Business entity")
     status: str = "issued"
@@ -172,6 +190,16 @@ class PurchaseOrderCreate(BaseModel):
     actor: Optional[str] = None
     reason: Optional[str] = None
     metadata: dict = Field(default_factory=dict)
+
+    @field_validator("currency")
+    @classmethod
+    def _currency_upper(cls, v: str) -> str:
+        return _normalize_currency(v)
+
+    @field_validator("po_number")
+    @classmethod
+    def _po_number_non_empty(cls, v: str) -> str:
+        return _non_empty_trimmed(v)
 
 
 class PurchaseOrderResponse(BaseModel):
@@ -193,8 +221,8 @@ class PurchaseOrderResponse(BaseModel):
 
 class InvoiceCreate(BaseModel):
     """Invoice creation model."""
-    invoice_number: str
-    amount: float
+    invoice_number: str = Field(..., min_length=1)
+    amount: float = Field(..., gt=0)
     currency: str = "USD"
     entity: Optional[str] = None
     status: str = "sent"
@@ -204,6 +232,16 @@ class InvoiceCreate(BaseModel):
     actor: Optional[str] = None
     reason: Optional[str] = None
     metadata: dict = Field(default_factory=dict)
+
+    @field_validator("currency")
+    @classmethod
+    def _currency_upper(cls, v: str) -> str:
+        return _normalize_currency(v)
+
+    @field_validator("invoice_number")
+    @classmethod
+    def _invoice_number_non_empty(cls, v: str) -> str:
+        return _non_empty_trimmed(v)
 
 
 class InvoiceResponse(BaseModel):
@@ -228,8 +266,8 @@ class InvoiceResponse(BaseModel):
 
 class PaymentCreate(BaseModel):
     """Payment creation model."""
-    payment_reference: str
-    amount: float
+    payment_reference: str = Field(..., min_length=1)
+    amount: float = Field(..., gt=0)
     currency: str = "USD"
     paid_at: Optional[datetime] = None
     method: str
@@ -237,6 +275,16 @@ class PaymentCreate(BaseModel):
     actor: Optional[str] = None
     reason: Optional[str] = None
     metadata: dict = Field(default_factory=dict)
+
+    @field_validator("currency")
+    @classmethod
+    def _currency_upper(cls, v: str) -> str:
+        return _normalize_currency(v)
+
+    @field_validator("payment_reference")
+    @classmethod
+    def _payment_reference_non_empty(cls, v: str) -> str:
+        return _non_empty_trimmed(v)
 
 
 class PaymentResponse(BaseModel):
@@ -835,7 +883,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     proper 4xx codes on invalid signatures.
     """
 
-    return await handle_stripe_webhook(request, db, AGENT_SETTINGS)
+    body, status_code = await handle_stripe_webhook(request, db, AGENT_SETTINGS)
+    return JSONResponse(status_code=status_code, content=body.model_dump())
 
 
 @app.post("/webhooks/gumroad")
@@ -846,4 +895,5 @@ async def gumroad_webhook(request: Request, db: Session = Depends(get_db)):
     TODO: Confirm Gumroad signature scheme and enforce strict 4xx responses.
     """
 
-    return await handle_gumroad_webhook(request, db, AGENT_SETTINGS)
+    body, status_code = await handle_gumroad_webhook(request, db, AGENT_SETTINGS)
+    return JSONResponse(status_code=status_code, content=body.model_dump())
