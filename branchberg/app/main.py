@@ -600,7 +600,8 @@ def create_invoice(
             detail="Invoice status must be 'draft', 'sent', or 'void' on creation.",
         )
 
-    if payload.currency != purchase_order.currency:
+    invoice_currency = payload.currency.strip().upper()
+    if invoice_currency != purchase_order.currency:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Invoice currency must match purchase order currency.",
@@ -613,7 +614,7 @@ def create_invoice(
         )
 
     amount_cents = int(payload.amount * 100)
-    po_currency = payload.currency.strip().upper()
+    po_currency = invoice_currency
     actor = payload.actor or "system"
     now = datetime.utcnow()
     invoice = Invoice(
