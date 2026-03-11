@@ -2,7 +2,7 @@
 import importlib.util
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from io import StringIO
 from contextlib import asynccontextmanager
@@ -284,6 +284,20 @@ class PaymentCreate(BaseModel):
     @field_validator("payment_reference")
     @classmethod
     def _payment_reference_non_empty(cls, v: str) -> str:
+        return _non_empty_trimmed(v)
+
+    @field_validator("method")
+    @classmethod
+    def _normalize_payment_method(cls, v: str) -> str:
+        method = _non_empty_trimmed(v).lower()
+        allowed_methods = {"ach", "wire", "check", "card", "other"}
+        if method not in allowed_methods:
+            raise ValueError("method must be one of: ach, wire, check, card, other")
+        return method
+
+    @field_validator("artifact_uri")
+    @classmethod
+    def _artifact_uri_non_empty(cls, v: str) -> str:
         return _non_empty_trimmed(v)
 
 
@@ -665,6 +679,19 @@ def create_invoice(
     po_currency = invoice_currency
     actor = payload.actor or "system"
     now = datetime.utcnow()
+    issued_at = payload.issued_at
+    due_at = payload.due_at
+
+    if normalized_status == "sent" and due_at is None:
+        base_time = issued_at or now
+        due_at = base_time + timedelta(days=30)
+
+    if issued_at and due_at and due_at < issued_at:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invoice due date cannot be earlier than issued date.",
+        )
+
     invoice = Invoice(
         id=str(uuid.uuid4()),
         invoice_number=payload.invoice_number,
@@ -672,8 +699,8 @@ def create_invoice(
         amount_cents=amount_cents,
         currency=po_currency,
         status=normalized_status,
-        issued_at=payload.issued_at,
-        due_at=payload.due_at,
+        issued_at=issued_at,
+        due_at=due_at,
         artifact_uri=payload.artifact_uri,
         entity=purchase_order.entity,
         customer_id=purchase_order.customer_id,
@@ -765,6 +792,12 @@ def record_payment(
             detail="Invoice is already marked as paid.",
         )
 
+    if invoice.status == "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot record payment against a draft invoice.",
+        )
+
     if not payload.artifact_uri:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -776,6 +809,11 @@ def record_payment(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Payment amount must cover the invoice total.",
+        )
+    if amount_cents > invoice.amount_cents:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Payment amount cannot exceed invoice total without credit memo handling.",
         )
 
     invoice_currency = (invoice.currency or "").strip().upper()
