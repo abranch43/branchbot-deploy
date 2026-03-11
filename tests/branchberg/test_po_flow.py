@@ -286,6 +286,139 @@ def test_payment_accepts_normalized_currency_values(client, test_db):
     assert payment_response.json()["currency"] == "USD"
 
 
+def test_payment_rejects_overpayment_without_credit_memo(client, test_db):
+    """Ensure overpayments are rejected unless explicit credit handling exists."""
+    po_payload = {
+        "po_number": "PO-OVERPAY-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-OVERPAY-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "status": "sent",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 200
+    invoice_id = invoice_response.json()["id"]
+
+    payment_payload = {
+        "payment_reference": "PAY-OVERPAY-1",
+        "amount": 1200.00,
+        "currency": "USD",
+        "method": "ach",
+        "artifact_uri": "s3://receipt",
+    }
+    payment_response = client.post(f"/invoice/{invoice_id}/payment", json=payment_payload)
+    assert payment_response.status_code == 422
+    assert "cannot exceed" in payment_response.json()["detail"]
+
+
+def test_payment_rejects_invalid_method(client, test_db):
+    """Ensure payment methods are constrained to a controlled allowlist."""
+    po_payload = {
+        "po_number": "PO-METHOD-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-METHOD-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "status": "sent",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 200
+    invoice_id = invoice_response.json()["id"]
+
+    payment_payload = {
+        "payment_reference": "PAY-METHOD-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "method": "crypto",
+        "artifact_uri": "s3://receipt",
+    }
+    payment_response = client.post(f"/invoice/{invoice_id}/payment", json=payment_payload)
+    assert payment_response.status_code == 422
+    assert "method" in str(payment_response.json()["detail"]).lower()
+
+
+def test_sent_invoice_defaults_due_date_when_missing(client, test_db):
+    """Ensure sent invoices without due dates receive default net terms."""
+    po_payload = {
+        "po_number": "PO-DUE-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-DUE-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "status": "sent",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 200
+    assert invoice_response.json()["due_at"] is not None
+
+
+def test_payment_rejects_draft_invoice(client, test_db):
+    """Ensure draft invoices cannot be marked paid."""
+    po_payload = {
+        "po_number": "PO-DRAFTPAY-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    }
+    po_response = client.post("/po", json=po_payload)
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_payload = {
+        "invoice_number": "INV-DRAFTPAY-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "status": "draft",
+    }
+    invoice_response = client.post(f"/po/{po_id}/invoice", json=invoice_payload)
+    assert invoice_response.status_code == 200
+    invoice_id = invoice_response.json()["id"]
+
+    payment_payload = {
+        "payment_reference": "PAY-DRAFTPAY-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "method": "ach",
+        "artifact_uri": "s3://receipt",
+    }
+    payment_response = client.post(f"/invoice/{invoice_id}/payment", json=payment_payload)
+    assert payment_response.status_code == 409
+    assert "draft invoice" in payment_response.json()["detail"].lower()
+
+
 def teardown_module(module):
     """Clean up test database file."""
     import os
