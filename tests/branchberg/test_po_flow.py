@@ -305,3 +305,73 @@ def teardown_module(module):
                 break
             except (FileNotFoundError, PermissionError):
                 pass
+
+
+def test_invoice_total_cannot_exceed_purchase_order_amount(client, test_db):
+    """Ensure cumulative non-void invoices cannot exceed the PO amount."""
+    po_response = client.post("/po", json={
+        "po_number": "PO-LIMIT-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    })
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    first_invoice = client.post(f"/po/{po_id}/invoice", json={
+        "invoice_number": "INV-LIMIT-1",
+        "amount": 700.00,
+        "currency": "USD",
+        "status": "sent",
+    })
+    assert first_invoice.status_code == 200
+
+    second_invoice = client.post(f"/po/{po_id}/invoice", json={
+        "invoice_number": "INV-LIMIT-2",
+        "amount": 400.00,
+        "currency": "USD",
+        "status": "sent",
+    })
+    assert second_invoice.status_code == 422
+    assert "cannot exceed" in second_invoice.json()["detail"].lower()
+
+
+def test_duplicate_payment_is_blocked(client, test_db):
+    """Ensure the API rejects a second payment attempt for the same invoice."""
+    po_response = client.post("/po", json={
+        "po_number": "PO-PAY-1",
+        "customer_name": "Acme Corp",
+        "customer_id": "ACME-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "entity": "A+ Enterprise LLC",
+    })
+    assert po_response.status_code == 200
+    po_id = po_response.json()["id"]
+
+    invoice_response = client.post(f"/po/{po_id}/invoice", json={
+        "invoice_number": "INV-PAY-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "status": "sent",
+    })
+    assert invoice_response.status_code == 200
+    invoice_id = invoice_response.json()["id"]
+
+    payment_payload = {
+        "payment_reference": "PAY-PAY-1",
+        "amount": 1000.00,
+        "currency": "USD",
+        "method": "ach",
+        "artifact_uri": "s3://receipt",
+    }
+    payment_response = client.post(f"/invoice/{invoice_id}/payment", json=payment_payload)
+    assert payment_response.status_code == 200
+
+    duplicate_response = client.post(f"/invoice/{invoice_id}/payment", json={
+        **payment_payload,
+        "payment_reference": "PAY-PAY-2",
+    })
+    assert duplicate_response.status_code == 409

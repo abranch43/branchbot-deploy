@@ -110,6 +110,7 @@ class Payment(Base):
             "payment_reference",
             name="uq_payment_entity_reference",
         ),
+        UniqueConstraint("invoice_id", name="uq_payment_invoice_id"),
     )
 
     id = Column(String, primary_key=True)  # UUID as string
