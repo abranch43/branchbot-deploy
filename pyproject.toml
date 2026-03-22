@@ -1,0 +1,20 @@
+[project]
+name = "branchbot-deploy"
+version = "0.1.0"
+description = "BranchOS revenue operations stack for revenue ingest, PO-to-paid tracking, and dashboard visibility."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Antonio Branch" }
+]
+license = { text = "MIT" }
+keywords = ["branchos", "branchbot", "fastapi", "streamlit", "revenue", "operations"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests", "branchbot"]
+
+[tool.ruff]
+line-length = 100
+
+target-version = "py311"
